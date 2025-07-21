@@ -37,3 +37,4 @@ nifty-ohlc-viewer/
 ├── .env.example # Sample env file for API keys
 ├── README.md # This file
 └── requirements.txt # Python dependencies (FastAPI, etc.)
+⚠️ This repository does not contain any live API credentials. Sensitive data is managed via environment variables.
