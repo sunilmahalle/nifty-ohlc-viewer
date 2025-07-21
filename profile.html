@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📘 Trader Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #0d0d0d;
+      color: #eee;
+      font-family: 'Inter', sans-serif;
+      padding: 30px;
+    }
+    h1 {
+      font-size: 30px;
+      margin-bottom: 20px;
+    }
+    .section {
+      background: #1a1a1a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 0 10px rgba(0,255,255,0.1);
+    }
+    .profile-box {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .profile-box div:first-child {
+      font-size: 40px;
+    }
+    .calendar-container {
+      display: flex;
+      gap: 30px;
+      overflow-x: auto;
+    }
+    .calendar {
+      min-width: 250px;
+    }
+    .calendar h3 {
+      text-align: center;
+      color: #03dac6;
+      margin-bottom: 10px;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    .day {
+      text-align: center;
+      border-radius: 6px;
+      padding: 10px;
+      font-weight: 600;
+      font-size: 13px;
+      background: #222;
+      color: #aaa;
+    }
+    .day.profit {
+      background-color: #134e2a;
+      color: #00e676;
+      cursor: pointer;
+    }
+    .day.loss {
+      background-color: #4d1e1e;
+      color: #ff5252;
+      cursor: pointer;
+    }
+    .day.selected {
+      outline: 2px solid #00e5ff;
+      box-shadow: 0 0 6px #00e5ff;
+    }
+    .neutral {
+      background-color: #333;
+    }
+    .summary-cards {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .btn {
+    background: #00B8D9;
+    color: black;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: 0.3s ease;
+    }
+    .btn:hover {
+    background: #ec0606;
+    }
+
+    .card {
+      flex: 1;
+      min-width: 200px;
+      padding: 15px;
+      border-radius: 10px;
+      background: #141414;
+      box-shadow: inset 0 0 5px rgba(0,255,255,0.1);
+    }
+    .card h4 {
+      margin: 0;
+      font-size: 14px;
+      color: #aaa;
+    }
+    .card p {
+      margin-top: 5px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .green { color: #00e676; }
+    .red { color: #ff5252; }
+
+    table {
+      width: 100%;
+      margin-top: 10px;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #333;
+      text-align: center;
+    }
+    th {
+      background: #111;
+      color: #0ff;
+    }
+    tr:hover {
+      background-color: #f10606;
+    }
+    .card {
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 15px rgba(252, 3, 3, 0.2);
+    }
+
+  </style>
+</head>
+<body>
+  <h1>👤 My Trading Dashboard</h1>
+
+  <!-- Profile Info -->
+  <div class="section profile-box">
+    <div>🧑</div>
+    <div>
+      <p><strong>Name:</strong> Sunil</p>
+      <p><strong>Email:</strong> trader@sunil.com</p>
+      <p><strong>Role:</strong> Admin</p>
+      <a href="https://options-trader.dhan.co/index/position" target="_blank" style="display:inline-block;margin-top:10px;padding:8px 15px;background:#00e5ff;color:#000;border-radius:6px;text-decoration:none;font-weight:bold;">➡️ Go to Dhan Terminal</a>
+    </div>
+  </div>
+
+  <!-- Fund Summary -->
+  <div class="section">
+    <h2>💰 Fund Summary</h2>
+    <div class="summary-cards">
+      
+      <div class="card"><h4>💸 Available</h4><p id="available">--</p></div>
+      <div class="card"><h4>🏦 Withdrawable</h4><p id="withdrawable">--</p></div>
+      <div class="card"><h4>Utilized Margin</h4><p id="utilized">--</p></div>
+    </div>
+  </div>
+
+  <!-- Trade Summary for Selected Date -->
+  <div class="section" id="tradeSummary" style="display:none;">
+    <h2>📊 Trade Summary for <span id="summaryDate"></span></h2>
+    <div class="summary-cards">
+      <div class="card"><h4>Overall P&L</h4><p id="overallPL">₹0.00</p></div>
+      <div class="card"><h4>Net P&L</h4><p id="netPL">₹0.00</p></div>
+      <div class="card"><h4>Total Trades</h4><p id="totalTrades">0</p></div>
+      <div class="card"><h4>Charges</h4><p id="charges">₹0.00</p></div>
+      <div class="card"><h4>Brokerage</h4><p id="brokerage">₹0.00</p></div>
+    </div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="section">
+    <h2>📅 Trade Calendar (May–July 2025)</h2>
+    <div class="calendar-container" id="calendarContainer"></div>
+  </div>
+
+  <!-- Trade Table -->
+  <div class="section">
+    <h2>📈 Trade History</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Symbol</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Type</th>
+          <th>Segment</th>
+          <th>Net P&L</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="tradeTableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    function normalizeDate(dateStr) {
+      const d = new Date(dateStr);
+      return d.toISOString().split('T')[0];
+    }
+
+    async function fetchAllTrades(from, to) {
+      let page = 0, allTrades = [];
+      while (true) {
+        const res = await fetch(`/trades?from_date=${from}&to_date=${to}&page=${page}`);
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) break;
+        allTrades.push(...data);
+        page++;
+      }
+      return allTrades;
+    }
+
+    fetch('/funds')
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('available').textContent = `₹${(data.availabelBalance ?? 0).toFixed(2)}`;
+        document.getElementById('withdrawable').textContent = `₹${(data.withdrawableBalance ?? 0).toFixed(2)}`;
+        document.getElementById('utilized').textContent = `₹${(data.utilizedAmount ?? 0).toFixed(2)}`;
+      });
+
+    (async () => {
+      const allTrades = await fetchAllTrades('2025-05-01', '2025-07-31');
+      const dayMap = {};
+      allTrades.forEach(trade => {
+        const date = normalizeDate(trade.exchangeTime || trade.orderTime || '');
+        const pnl = parseFloat(trade.netPnL ?? 0);
+        if (date && !isNaN(pnl)) dayMap[date] = (dayMap[date] ?? 0) + pnl;
+      });
+      renderCalendar(2025, 4, 'May 2025', dayMap);
+      renderCalendar(2025, 5, 'June 2025', dayMap);
+      renderCalendar(2025, 6, 'July 2025', dayMap);
+    })();
+
+    function renderCalendar(year, month, title, dayMap) {
+      const container = document.getElementById('calendarContainer');
+      const calendar = document.createElement('div');
+      calendar.className = 'calendar';
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const startDay = new Date(year, month, 1).getDay();
+      let html = `<h3>${title}</h3><div class="calendar-grid">`;
+      for (let i = 0; i < startDay; i++) html += `<div class="day neutral"></div>`;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const pnl = dayMap[dateStr] ?? null;
+        let cls = 'neutral', onclick = '';
+        if (pnl !== null) {
+          cls = pnl > 0 ? 'profit' : 'loss';
+          onclick = `onclick="selectDay(this, '${dateStr}')"`
+        }
+        html += `<div class="day ${cls}" ${onclick}>${day}</div>`;
+      }
+      html += `</div>`;
+      calendar.innerHTML = html;
+      container.appendChild(calendar);
+    }
+
+    function selectDay(el, dateStr) {
+      document.querySelectorAll('.day.selected').forEach(d => d.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('summaryDate').textContent = new Date(dateStr).toDateString();
+      document.getElementById('tradeSummary').style.display = 'block';
+      loadDayTrades(dateStr);
+    }
+
+    function loadDayTrades(date) {
+      fetch(`/trades?from_date=${date}&to_date=${date}&page=0`)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.getElementById('tradeTableBody');
+          tbody.innerHTML = '';
+          let gross = 0, net = 0, charges = 0, brokerage = 0;
+
+          if (!Array.isArray(data) || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8">No trades on ${date}</td></tr>`;
+            document.getElementById('tradeSummary').style.display = 'none';
+            return;
+          }
+
+          data.forEach(trade => {
+            const pnl = parseFloat(trade.netPnL ?? 0);
+            const cost = (trade.tradedPrice ?? 0) * (trade.tradedQuantity ?? 0);
+            gross += pnl;
+
+            const charge = parseFloat(trade.sebiTax ?? 0)
+              + parseFloat(trade.serviceTax ?? 0)
+              + parseFloat(trade.stampDuty ?? 0)
+              + parseFloat(trade.exchangeTransactionCharges ?? 0);
+
+            charges += charge;
+            brokerage += parseFloat(trade.brokerageCharges ?? 0);
+            net += pnl;
+
+            const row = `
+              <tr>
+                <td>${trade.exchangeTime || '--'}</td>
+                <td>${trade.customSymbol || '--'}</td>
+                <td>${trade.tradedQuantity}</td>
+                <td>${trade.tradedPrice}</td>
+                <td>${trade.transactionType}</td>
+                <td>${trade.exchangeSegment}</td>
+                <td class="${pnl >= 0 ? 'green' : 'red'}">₹ ${pnl.toFixed(2)}</td>
+                <td class="${pnl >= 0 ? 'green' : 'red'}">${pnl >= 0 ? 'In Profit' : 'In Loss'}</td>
+              </tr>`;
+            tbody.insertAdjacentHTML('beforeend', row);
+          });
+
+          document.getElementById('overallPL').textContent = `₹${(net + charges + brokerage).toFixed(2)}`;
+          document.getElementById('netPL').textContent = `₹${net.toFixed(2)}`;
+          document.getElementById('charges').textContent = `₹${charges.toFixed(2)}`;
+          document.getElementById('brokerage').textContent = `₹${brokerage.toFixed(2)}`;
+          document.getElementById('totalTrades').textContent = data.length;
+        });
+    }
+  </script>
+</body>
+</html>
