@@ -1,40 +1,40 @@
-# NIFTY Options OHLC Viewer (Personal Trading Dashboard)
+# 📈 NIFTY Options OHLC Viewer — Personal Trading Dashboard
 
-This is a **personal-use trading dashboard** that integrates the **HTML5 Advanced Charting Library** with live market data from the **Dhan API**.
+This is a **free, non-commercial trading dashboard** currently under development.  
+It integrates real-time NIFTY 50 Options data from the **Dhan API** and will feature the **TradingView HTML5 Advanced Charting Library**.
 
----
-
-## 📌 Purpose
-
-- 🔍 Built solely for personal options trading analysis
-- 🔄 Uses real-time OHLC and LTP data from Dhan API (WebSocket + REST)
-- 🔒 Hosted locally or internally, **not available publicly**
-- 🧪 Intended for internal usage only, not monetized or client-facing
+> ⚠️ This project is under development. A live version will be hosted publicly for free access on GitHub Pages or Vercel once integration is complete.
 
 ---
 
-## ⚙️ Features
+## 🔧 Project Purpose
 
-- Real-time NIFTY 50 Options OHLC tracking via Dhan API
-- Interactive chart using HTML5 Advanced Charting Library
-- Strike price & expiry selection
-- RR / LL custom indicators (internally used)
-- Telegram alerts and sound notifications (in full version)
-- Dark UI, optimized for personal trading flow
+- To visualize real-time NIFTY 50 Options data (OHLC + LTP)
+- For personal analysis, education, and open access to traders
+- Non-commercial: no ads, payments, or user tracking
 
 ---
 
-## 🗂️ Project Structure
+## 🧩 Features (In Progress)
 
+- Real-time data feed using Dhan API (REST + WebSocket)
+- Advanced HTML5 Chart (TradingView)
+- Strike, expiry, and call/put selection
+- Telegram alerts, RR/LL indicators (internal features)
+- Fast, mobile-friendly UI (coming soon)
 
+---
 
-nifty-ohlc-viewer/
-├── frontend/
-│ ├── index.html # HTML5 chart integration page
-│ └── charting_library/ # Placeholder for TradingView chart library
-├── backend/
-│ └── server.py 
-├── .env.example # Sample env file for API keys
-├── README.md # This file
-└── requirements.txt # Python dependencies (FastAPI, etc.)
-⚠️ This repository does not contain any live API credentials. Sensitive data is managed via environment variables.
+## 🔐 API Key Security
+
+⚠️ **No API keys, access tokens, or client credentials are stored in this repository.**
+
+To run locally:
+
+1. Create a `.env` file based on `.env.example`
+2. Add your personal credentials there.
+
+```env
+# .env.example
+DHAN_CLIENT_ID=your_client_id
+DHAN_ACCESS_TOKEN=your_token
