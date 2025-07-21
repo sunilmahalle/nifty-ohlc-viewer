@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Today's Positions</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #111;
+      color: white;
+      margin: 0;
+    }
+    h1 {
+      width: 100%;
+      text-align: center;
+      font-size: 26px;
+      padding: 15px 0;
+      background: #1a1a1a;
+      color: cyan;
+      margin-bottom: 10px;
+    }
+    h2 {
+      margin: 15px 0 8px 0;
+      color: cyan;
+      font-size: 18px;
+      text-align: center;
+    }
+    .section-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    table {
+      width: auto; /* shrink to content */
+      border-collapse: collapse;
+      margin: 10px 0;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 4px 8px; /* compact */
+      text-align: center;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    th {
+      background: #222;
+      font-size: 14px;
+    }
+    tr {
+      height: auto;
+    }
+    tfoot td {
+      background: #1a1a1a;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .green { color: lime; }
+    .red { color: red; }
+    .row-green { background: rgba(0, 255, 0, 0.05); }
+    .row-red { background: rgba(255, 0, 0, 0.05); }
+    button {
+      padding: 2px 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Today's Positions</h1>
+
+  <div class="section-wrapper">
+    <h2>Open Positions</h2>
+    <table id="openPositions">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Qty</th>
+          <th>Buy Avg</th>
+          <th>Sell Avg</th>
+          <th>P&L</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4">Total Open P&L</td>
+          <td id="totalOpenPnl" class="green">0.00</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <h2>Closed Positions</h2>
+    <table id="closedPositions">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Qty</th>
+          <th>Buy Avg</th>
+          <th>Sell Avg</th>
+          <th>P&L</th>
+          <th>% Return</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4">Total Closed P&L</td>
+          <td id="totalClosedPnl" class="green">0.00</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+<script>
+async function loadPositions() {
+  try {
+    const res = await fetch("/positions");
+    const data = await res.json();
+
+    const openPositions = data.filter(p => p.netQty !== 0)
+                              .sort((a, b) => b.unrealizedProfit - a.unrealizedProfit);
+    const closedPositions = data.filter(p => p.netQty === 0)
+                                .sort((a, b) => b.realizedProfit - a.realizedProfit);
+
+    const openTbody = document.querySelector("#openPositions tbody");
+    const closedTbody = document.querySelector("#closedPositions tbody");
+    openTbody.innerHTML = "";
+    closedTbody.innerHTML = "";
+
+    let totalOpenPnl = 0;
+    let totalClosedPnl = 0;
+
+    // ✅ Open Positions
+    openPositions.forEach(pos => {
+      const pnl = pos.unrealizedProfit || 0;
+      totalOpenPnl += pnl;
+      const pnlClass = pnl >= 0 ? "green" : "red";
+      const rowClass = pnl >= 0 ? "row-green" : "row-red";
+
+      const tr = document.createElement("tr");
+      tr.className = rowClass;
+      tr.innerHTML = `
+        <td>${pos.tradingSymbol}</td>
+        <td>${pos.netQty}</td>
+        <td>${pos.buyAvg.toFixed(2)}</td>
+        <td>${pos.sellAvg.toFixed(2)}</td>
+        <td class="${pnlClass}">${pnl.toFixed(2)}</td>
+        <td><button onclick="exitPosition('${pos.securityId}', ${pos.netQty})">Exit</button></td>
+      `;
+      openTbody.appendChild(tr);
+    });
+
+    // ✅ Closed Positions
+    closedPositions.forEach(pos => {
+      const pnl = pos.realizedProfit || 0;
+      totalClosedPnl += pnl;
+      const pnlClass = pnl >= 0 ? "green" : "red";
+      const rowClass = pnl >= 0 ? "row-green" : "row-red";
+      const totalCost = pos.buyAvg * pos.buyQty;
+      const percentReturn = totalCost > 0 ? ((pnl / totalCost) * 100).toFixed(2) : 0;
+
+      const tr = document.createElement("tr");
+      tr.className = rowClass;
+      tr.innerHTML = `
+        <td>${pos.tradingSymbol}</td>
+        <td>${pos.buyQty + pos.sellQty}</td>
+        <td>${pos.buyAvg.toFixed(2)}</td>
+        <td>${pos.sellAvg.toFixed(2)}</td>
+        <td class="${pnlClass}">${pnl.toFixed(2)}</td>
+        <td>${percentReturn}%</td>
+      `;
+      closedTbody.appendChild(tr);
+    });
+
+    // ✅ Update totals and color based on sign
+    const openPnlEl = document.getElementById("totalOpenPnl");
+    const closedPnlEl = document.getElementById("totalClosedPnl");
+
+    openPnlEl.textContent = totalOpenPnl.toFixed(2);
+    openPnlEl.className = totalOpenPnl >= 0 ? "green" : "red";
+
+    closedPnlEl.textContent = totalClosedPnl.toFixed(2);
+    closedPnlEl.className = totalClosedPnl >= 0 ? "green" : "red";
+
+  } catch (err) {
+    console.error("Failed to load positions:", err);
+  }
+}
+async function sendEmailReport() {
+  try {
+    const openRows = Array.from(document.querySelectorAll("#openPositions tbody tr"));
+    const closedRows = Array.from(document.querySelectorAll("#closedPositions tbody tr"));
+
+    const openData = openRows.map(row => {
+      const cells = row.querySelectorAll("td");
+      return {
+        symbol: cells[0].innerText,
+        qty: cells[1].innerText,
+        buyAvg: cells[2].innerText,
+        sellAvg: cells[3].innerText,
+        pnl: cells[4].innerText
+      };
+    });
+
+    const closedData = closedRows.map(row => {
+      const cells = row.querySelectorAll("td");
+      return {
+        symbol: cells[0].innerText,
+        qty: cells[1].innerText,
+        buyAvg: cells[2].innerText,
+        sellAvg: cells[3].innerText,
+        pnl: cells[4].innerText,
+        returnPercent: cells[5].innerText
+      };
+    });
+
+    const payload = {
+      openPositions: openData,
+      closedPositions: closedData,
+      totalOpenPnl: document.getElementById("totalOpenPnl").innerText,
+      totalClosedPnl: document.getElementById("totalClosedPnl").innerText
+    };
+
+    const res = await fetch('/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+    alert(result.message || 'Email sent!');
+  } catch (error) {
+    alert("Failed to send email.");
+    console.error(error);
+  }
+}
+async function exitPosition(securityId, qty) {
+  alert(`Exit order for ${securityId}, qty: ${qty}`);
+  // TODO: Call backend to place exit order
+}
+
+loadPositions();
+setInterval(loadPositions, 2000); // refresh every 2 sec
+
+</script>
+<div style="text-align: center; margin: 20px;">
+  <button onclick="sendEmailReport()">📧 Send Email Report</button>
+</div>
+
+</body>
+</html>

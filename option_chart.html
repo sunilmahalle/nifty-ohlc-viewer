@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Option Charts</title>
+  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.development.js"></script>
+
+  <style>
+    body {
+      background: #111;
+      color: white;
+      margin: 0;
+      font-family: monospace;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .chart-box {
+      background: #222;
+      border: 1px solid #333;
+      padding: 5px;
+      position: relative;
+    }
+
+    .canvas {
+      width: 100%;
+      height: 200px;
+    }
+
+    /* ✅ Fullscreen chart mode */
+    .fullscreen-chart {
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 1000 !important;
+      background: #111;
+    }
+
+    .fullscreen-chart .canvas {
+      height: calc(100% - 30px) !important;
+    }
+
+    /* Optional: disable scrollbars during fullscreen */
+    body.fullscreen-mode {
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="grid" id="chartGrid"></div>
+
+  <!-- ✅ Load the chart logic -->
+  <script src="/static/option_chart.js" type="module"></script>
+</body>
+</html>
