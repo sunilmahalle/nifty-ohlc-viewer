@@ -1,1 +1,2580 @@
 
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Option Charts Grid</title>
+  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        font-size: 1.1vh;
+        overflow: hidden; /* ✅ disables scrollbars */
+    }
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: #222;
+    border-bottom: 1px solid #333;
+    gap: 10px;
+    flex-wrap: wrap;
+    }
+
+
+    .chart-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr); /* 👈 force 2 rows */
+    gap: 6px;
+    padding: 6px;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+    }
+
+
+    .chart-box {
+    background: #222;
+    border: 1px solid #333;
+    position: relative;
+    height: 100%;     /* ✅ fill the grid cell */
+    min-height: 0;    /* ✅ prevent overflow */
+    }
+
+
+    .label {
+      position: absolute;
+      top: 5px;
+      left: 6px;
+      font-size: 13px;
+      font-weight: bold;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 2px 6px;
+      border-radius: 4px;
+      z-index: 10;
+    }
+
+
+
+    .flex-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    }
+
+    .section-label {
+    font-weight: bold;
+    flex-grow: 1;
+    text-align: center;
+    }
+
+    .tf-buttons {
+    display: flex;
+    gap: 6px;
+    }
+
+    .chart-section-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    }
+
+    .tf-buttons button {
+    background: #333;
+    color: white;
+    border: 1px solid #666;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 15px;
+    border-radius: 4px;
+    transition: all 0.2s ease-in-out;
+    }
+
+    .tf-buttons button:hover {
+    border-color: rgb(255, 0, 0);
+    box-shadow: 0 0 6px rgb(240, 2, 53);
+    }
+
+    .tf-buttons button.active {
+    background: lime;
+    color: black;
+    font-weight: bold;
+    }
+    .delta-column {
+    font-size: 15px;        /* increase this as needed */
+    font-weight: bold;
+    white-space: nowrap;    /* ✅ prevent text from wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1;         /* ✅ tighter spacing */
+    }
+    .section-label {
+    font-size: 16px;        /* chart section title text */
+    font-weight: bold;
+    text-align: center;
+    white-space: nowrap;
+    flex-grow: 1;
+    }
+
+    .section-title {
+    padding: 4px 10px;   /* was 6px 10px */
+    }
+
+    button.buy {
+    background-color: #1e1e1e;
+    color: lime;
+    border: 1px solid lime;
+    transition: all 0.2s ease-in-out;
+    }
+    button.buy:hover {
+    background-color: black;
+    border-color: lime;
+    box-shadow: 0 0 6px lime;
+    }
+
+    button.sell {
+    background-color: #1e1e1e;
+    color: red;
+    border: 1px solid red;
+    transition: all 0.2s ease-in-out;
+    }
+    button.sell:hover {
+    background-color: black;
+    border-color: red;
+    box-shadow: 0 0 6px red;
+    }
+
+    #trade-window {
+    position: fixed;
+    top: 100px;
+    left: 100px;
+    background: #1c1f26;           /* 🔁 Updated background */
+    border: 1px solid #444;
+    border-radius: 12px;
+    color: white;
+    font-family: monospace;
+    width: 95%;
+    max-width: 940px;
+    z-index: 9999;
+    box-shadow: 0 0 20px rgba(0,255,180,0.15); /* 🔥 neon glow effect */
+    }
+
+
+
+    .trade-window-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(to right, #222, #333); /* 🌈 subtle gradient */
+    border-bottom: 1px solid #444;
+    padding: 10px 16px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: move;
+    color: #00ffcc; /* glowing text color */
+    text-shadow: 0 0 4px #00ffcc; /* slight glow */
+    }
+
+
+    .trade-window-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(90deg, #abdde7, #84d1eb); /* 💎 neon blue gradient */
+    border-bottom: 1px solid #0ff; /* optional: glowing border */
+    padding: 10px 16px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: move;
+    color: #000000;
+    text-shadow: 0 0 5px #000505;
+    }
+
+
+    .window-controls span {
+    margin-left: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    }
+
+    .trade-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+    }
+
+    .trade-table tbody tr:hover {
+    background-color: #2a2d36; /* lighter background on hover */
+    transition: background 0.2s ease-in-out;
+    }
+
+    .trade-table thead {
+    background: #222;
+    }
+
+    .trade-table th, .trade-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #333;
+    text-align: center;
+    }
+
+    .trade-table td {
+    font-weight: bold;
+    }
+
+    .trade-table .green { color: lime; }
+    .trade-table .red { color: red; }
+    .trade-table .orange { color: orange; }
+
+    .trade-table button.exit-btn {
+    padding: 4px 8px;
+    background: #444;
+    border: 1px solid #888;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    }
+
+    .trade-table button.exit-btn:hover {
+    background-color: black;
+    border-color: red;
+    box-shadow: 0 0 6px rgb(240, 2, 53);
+    }
+
+    tfoot td {
+    background: #1a1a1a;
+    border-top: 1px solid #444;
+    font-size: 16px;
+    }
+
+    #toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    }
+
+    .toast {
+    display: flex;
+    align-items: center;
+    background-color: #333;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    animation: fadeInOut 4s ease forwards;
+    min-width: 220px;
+    gap: 10px;
+    }
+
+    .toast-icon {
+    font-size: 18px;
+    line-height: 1;
+    }
+
+    .toast.success   { border-left: 5px solid lime; }
+    .toast.error     { border-left: 5px solid red; }
+    .toast.warning   { border-left: 5px solid orange; }
+    .toast.info      { border-left: 5px solid skyblue; }
+
+
+    .toast.success { border-left: 5px solid lime; }
+    .toast.error   { border-left: 5px solid red; }
+
+    @keyframes fadeInOut {
+    0%   { opacity: 0; transform: translateY(-10px); }
+    10%  { opacity: 1; transform: translateY(0); }
+    90%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+    }
+
+    .chart-box.flash-border {
+    animation: flashGlow 1s infinite;
+    border: 3px solid rgb(255, 0, 200) !important;
+    box-shadow: 0 0 12px rgb(255, 1, 255);
+    }
+
+    @keyframes flashGlow {
+    0%   { box-shadow: 0 0 4px rgb(225, 0, 255); }
+    50%  { box-shadow: 0 0 12px rgb(174, 0, 255); }  
+    100% { box-shadow: 0 0 4px rgb(250, 2, 229); }
+    }
+
+    .loader {
+    width: 18px;
+    height: 18px;
+    border: 3px solid #aaa;
+    border-top: 3px solid #4caf50;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+    }
+
+    @keyframes spin {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+    }
+
+    .bottom-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    font-size: 14px;
+    padding: 2px 4px;
+    color: white;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 5;
+    pointer-events: none;
+    border-top: 1px solid #333;
+    }
+
+    .fullscreen-chart {
+    position: fixed !important;
+    inset: 0;
+    z-index: 9999;
+    width: 100vw !important;
+    height: 100vh !important;
+    box-shadow: 0 0 20px lime;
+    background: #111;
+    }
+
+    .hidden-chart {
+    display: none !important;
+    }
+
+    @keyframes glow-fade-green {
+    0%   { box-shadow: 0 0 12px 4px #00ff00; }
+    100% { box-shadow: none; }
+    }
+    @keyframes glow-fade-red {
+    0%   { box-shadow: 0 0 12px 4px #ff3333; }
+    100% { box-shadow: none; }
+    }
+
+    .chart-glow-bullish {
+    animation: glow-fade-green 4s ease-out;
+    border: 2px solid #00ff00;
+    }
+    .chart-glow-bearish {
+    animation: glow-fade-red 4s ease-out;
+    border: 2px solid #ff3333;
+    }
+
+
+
+
+
+
+  </style>
+</head>
+<body>
+
+  <!-- CALL Section Header -->
+  <div class="section-title flex-header">
+    <span id="callITMHeader" class="delta-column"></span>
+    <div class="section-label">CALL OPTIONS (3 ITM + 3 OTM)</div>
+    <div id="niftyLtpBox" class="delta-column" style="color: cyan; font-weight: bold; margin-left: 10px;">NIFTY: --</div>
+
+    <span id="callOTMHeader" class="delta-column"></span>
+    <div id="marketDirectionLabel" class="delta-column" style="color: gold; min-width: 110px;">Market: –</div>
+    <div id="callSpeed" class="delta-column" style="min-width:80px;">Speed: -</div>
+
+    <div class="tf-buttons" data-type="CALL">
+        <button data-tf="1" class="active">1m</button>
+        <button data-tf="3">3m</button>
+        <button data-tf="5">5m</button>
+    </div>
+  </div>
+
+    <div class="chart-section-wrapper">
+      <div class="chart-grid" id="callGrid"></div>
+    </div>
+
+    <!-- PUT Section Header -->
+    <!-- PUT Section Header -->
+    <div class="section-title flex-header">
+        <span id="putITMHeader" class="delta-column"></span>
+        <div class="section-label" style="display: flex; align-items: center; gap: 6px;">
+            PUT OPTIONS (3 ITM + 3 OTM)
+            <input id="lotMultiplier" type="number" min="1" max="10" value="1" style="
+                width: 40px;
+                background: #111;
+                color: lime;
+                font-size: 14px;
+                border: 1px solid lime;
+                border-radius: 4px;
+                padding: 2px 6px;
+                text-align: center;
+            " title="Lots (×75 qty)">
+        </div>
+
+
+        <!-- ADD THESE TWO LINES BELOW -->
+        <span id="callHMA" class="delta-column" style="color: lime;">CALL H–AVG: ₹0</span>
+        <span id="putHMA" class="delta-column" style="color: orange;">PUT H–AVG: ₹0</span>
+
+        <span id="putOTMHeader" class="delta-column"></span>
+        <div id="putSpeed" class="delta-column" style="min-width:80px;">Speed: -</div>
+        <div class="tf-buttons" data-type="PUT">
+            <button data-tf="1" class="active">1m</button>
+            <button data-tf="3">3m</button>
+            <button data-tf="5">5m</button>
+        </div>
+    </div>
+
+
+    <div class="chart-section-wrapper">
+      <div class="chart-grid" id="putGrid"></div>
+    </div>
+
+    <div id="splash-screen" style="
+        position: fixed;
+        inset: 0;
+        background: black;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        font-size: 28px;
+        font-family: 'Inter', monospace;
+        z-index: 99999;
+        opacity: 1;
+        transition: opacity 1s ease;
+        text-align: center;
+        overflow: hidden;
+        ">
+        <!-- 🔮 SVG Background -->
+        <svg id="splash-svg-bg" viewBox="0 0 1440 320" preserveAspectRatio="none"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;">
+            <defs>
+            <linearGradient id="fadeGradient" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#00ffc8" stop-opacity="0.15" />
+                <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+            </linearGradient>
+            </defs>
+            <path id="animated-wave" fill="url(#fadeGradient)"
+                d="M0,192 C288,320 576,128 864,256 C1152,384 1440,192 1440,192 L1440,320 L0,320 Z">
+            <animate attributeName="d" dur="12s" repeatCount="indefinite"
+                values="
+                M0,160 C360,280 720,80 1080,240 C1440,400 1440,160 1440,160 L1440,320 L0,320 Z;
+                M0,200 C320,100 640,320 960,160 C1280,0 1440,240 1440,240 L1440,320 L0,320 Z;
+                M0,160 C360,280 720,80 1080,240 C1440,400 1440,160 1440,160 L1440,320 L0,320 Z
+                " />
+            </path>
+        </svg>
+
+        <!-- 💹 Main Quote -->
+        <div>
+            💹 <strong>“Amateurs trade to feel right. Professionals trade to make money — with a strategy, a stop-loss, and a system.”</strong>
+        </div>
+
+        <!-- 👇 Subtext -->
+        <div style="margin-top: 20px; font-size: 14px; color: #888;">
+            – Powered by Rugved  Run by DhanHQ API
+        </div>
+        </div>
+
+
+
+
+
+
+  <script>
+    const atm = parseInt(new URLSearchParams(location.search).get("strike") || "24800");
+    const expiry = "24 JUL";
+
+    const callStrikes = [atm - 50, atm - 100, atm - 150, atm + 50, atm + 100, atm + 150];
+    const putStrikes  = [atm + 50, atm + 100, atm + 150, atm - 50, atm - 100, atm - 150];
+
+    const allStrikes = [...callStrikes.map(s => [s, "CALL"]), ...putStrikes.map(s => [s, "PUT"])];
+    const allSymbols = allStrikes.map(([s, t]) => `NIFTY ${expiry} ${s} ${t}`);
+    const liveOptionMap = {};  // security_id → { chart, series, label }
+    const tickStats = {};  // symbol → { count, lastSec, speed }
+
+
+    async function computeRollingAvgFrom5MinTab(strike, type) {
+        const centerSymbol = `NIFTY ${expiry} ${strike} ${type}`;
+        const near1Symbol = `NIFTY ${expiry} ${strike - 50} ${type}`;
+        const near2Symbol = `NIFTY ${expiry} ${strike + 50} ${type}`;
+
+        try {
+            console.log(`🔍 AVG Tab for '${centerSymbol}' from '${near1Symbol}' and '${near2Symbol}'`);
+
+            const [c1, c2, cC] = await Promise.all([
+            fetch(`/option_5min_agg?symbol=${encodeURIComponent(near1Symbol)}`).then(r => r.json()),
+            fetch(`/option_5min_agg?symbol=${encodeURIComponent(near2Symbol)}`).then(r => r.json()),
+            fetch(`/option_5min_agg?symbol=${encodeURIComponent(centerSymbol)}`).then(r => r.json())
+            ]);
+
+            if (!c1?.[0] || !c2?.[0] || !cC?.[0]) {
+            console.warn(`⚠️ Missing 5-min data for AVG lines: ${strike}`);
+            return;
+            }
+
+            let high, low;
+
+            if (type === "CALL") {
+                high = c1[0].high;  // strike - 50
+                low  = c2[0].low;   // strike + 50
+            } else if (type === "PUT") {
+                high = c2[0].high;  // strike + 50
+                low  = c1[0].low;   // strike - 50
+            }
+
+            const close = cC[0].close;
+            const avg = (high + low + close) / 3;
+
+            
+            console.log("🧭 Available keys:", Object.keys(liveOptionMap));
+            console.log("🎯 Looking for centerSymbol:", centerSymbol);
+
+            const meta = liveOptionMap[centerSymbol];
+            if (!meta || !meta.series) return;
+
+            // 🔍 Add separate line handles so they're not removed later
+            meta.fiveMinHighLine = meta.series.createPriceLine({
+            price: high,
+            color: 'orange',
+            title: 'HIGH 5m',
+            lineWidth: 2,
+            lineStyle: 0,
+            axisLabelVisible: false,
+
+            });
+
+            meta.fiveMinLowLine = meta.series.createPriceLine({
+            price: low,
+            color: 'orange',
+            title: 'LOW 5m',
+            lineWidth: 2,
+            lineStyle: 0,
+            axisLabelVisible: false,
+
+            });
+
+            meta.avgLine = meta.series.createPriceLine({
+            price: +avg.toFixed(2),
+            color: 'orange',
+            title: `AVG`,
+            lineWidth: 2,
+            lineStyle: 0
+            });
+
+            meta.avgReady = true;
+            // 🕰️ Historic AVG break markers
+            const tf = meta.currentTF || 3;  // default to 3m
+            const candles = meta[`data${tf}m`] || [];
+            const avgPrice = +avg.toFixed(2);
+
+            // 🧹 Clear any existing markers
+            meta.markers = [];
+
+            for (let i = candles.length - 1; i >= 1; i--) {
+                const prev = candles[i - 1];
+                const current = candles[i];
+
+                if (prev.close < avgPrice && current.close > avgPrice) {
+                    meta.markers = [{
+                        time: current.time,
+                        position: 'aboveBar',
+                        color: 'yellow',
+                        shape: 'arrowUp',
+                        text: 'AVG Break ↑'
+                    }];
+                    break;  // ✅ Exit loop after latest valid break ↑
+                }
+
+                if (prev.close > avgPrice && current.close < avgPrice) {
+                    meta.markers = [{
+                        time: current.time,
+                        position: 'belowBar',
+                        color: 'red',
+                        shape: 'arrowDown',
+                        text: 'AVG Break ↓'
+                    }];
+                    break;  // ✅ Exit loop after latest valid break ↓
+                }
+            }
+            meta.series.setMarkers(meta.markers);
+
+
+
+
+
+            console.log(`✅ AVG for ${centerSymbol}: H:${high} L:${low} C:${close} → AVG: ${avg.toFixed(2)}`);
+        } catch (err) {
+            console.error(`❌ Failed AVG line for ${centerSymbol}`, err);
+        }
+        }
+    
+    
+    function calculateEMA(candles, period = 26) {
+        const k = 2 / (period + 1);
+        let ema = [];
+        let prevEMA = candles[0].close;
+
+        for (let i = 0; i < candles.length; i++) {
+            const c = candles[i];
+            const price = c.close;
+
+            const currentEMA = i === 0 ? price : (price * k + prevEMA * (1 - k));
+            ema.push({ time: c.time, value: +currentEMA.toFixed(2) });
+            prevEMA = currentEMA;
+        }
+        return ema;
+    }
+
+    async function loadCharts() {
+        const callGrid = document.getElementById("callGrid");
+        const putGrid  = document.getElementById("putGrid");
+
+        let history = {};
+        try {
+            const res = await fetch("/batch_option_history", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(allSymbols)
+            });
+            history = await res.json();
+        } catch (err) {
+            console.error("❌ Batch fetch failed:", err);
+            return;
+        }
+
+        let chartsLoaded = 0;
+        const totalCharts = allStrikes.length;
+
+        for (const [strike, type] of allStrikes) {
+            const container = type === "CALL" ? callGrid : putGrid;
+            const symbol = `NIFTY ${expiry} ${strike} ${type}`;
+            const candles = history[symbol];
+
+            const box = document.createElement("div");
+            box.className = "chart-box";
+
+            const label = document.createElement("div");
+            label.className = "label";
+            label.innerHTML = `<div class="loader"></div> Loading ${strike} ${type}...`;
+
+            box.appendChild(label);
+            container.appendChild(box);
+
+            const bottomLabel = document.createElement("div");
+            bottomLabel.className = "bottom-label";
+            box.appendChild(bottomLabel);
+
+            // 🔄 Create countdown label
+            const countdownLabel = document.createElement("div");
+            countdownLabel.style.position = "absolute";
+            countdownLabel.style.color = "white";
+            countdownLabel.style.fontSize = "12px";
+            countdownLabel.style.background = "rgba(0, 0, 0, 0.6)";
+            countdownLabel.style.padding = "2px 5px";
+            countdownLabel.style.borderRadius = "4px";
+            countdownLabel.style.pointerEvents = "none";
+            countdownLabel.style.zIndex = "20";
+            box.appendChild(countdownLabel);
+
+
+            const chart = LightweightCharts.createChart(box, {
+                layout: { background: { color: "#222" }, textColor: "#DDD" },
+                grid: { vertLines: { visible: false }, horzLines: { visible: false } },
+                timeScale: { timeVisible: true },
+                priceScale: { borderColor: "#444" }
+            });
+
+            const series = chart.addCandlestickSeries();
+
+            let transformed = [];
+
+            if (candles && candles.length > 0) {
+                transformed = candles.map(c => ({
+                    time: Number(c.time),
+                    open: c.open,
+                    high: c.high,
+                    low: c.low,
+                    close: c.close
+                }));
+
+                const aggregated = aggregateCandles(transformed, 3);
+                series.setData(aggregated);
+                // ✅ Calculate EMA-26 and EMA-50
+                const ema26 = calculateEMA(aggregated, 26);
+                const ema50 = calculateEMA(aggregated, 50);
+
+                // ✅ Add EMA-26 (Blue)
+                const ema26Series = chart.addLineSeries({
+                    color: 'green',
+                    lineWidth: 1,
+                    priceLineVisible: false,
+                    crossHairMarkerVisible: false,
+                    axisLabelVisible: false,
+                });
+                ema26Series.setData(ema26);
+
+                // ✅ Add EMA-50 (Orange)
+                const ema50Series = chart.addLineSeries({
+                    color: 'red',
+                    lineWidth: 1,
+                    priceLineVisible: false,
+                    crossHairMarkerVisible: false,
+                    axisLabelVisible: false,
+                });
+                ema50Series.setData(ema50);
+
+
+                label.innerText = `${strike} ${type}`; // ✅ Reset to clean label
+
+            } else {
+                label.innerText += " (No data)";
+            }
+
+            liveOptionMap[symbol] = {
+                chart,
+                series,
+                label,
+                box,
+                bottomLabel,
+                highLine: null,
+                lowLine: null,
+                currentTF: 3,
+                data1m: transformed,
+                data3m: aggregateCandles(transformed, 3),
+                data5m: aggregateCandles(transformed, 5),
+                avgBreakAbove: false,
+                avgBreakBelow: false,
+                markers: [],
+                countdownLabel: countdownLabel,  // ✅ Add this line
+
+
+            };
+            enableDoubleClickFullscreen(box, chart);  // ✅ Add here
+
+
+            // Previous day high/low
+            const candleDates = candles.map(c => new Date(c.time * 1000).toISOString().slice(0, 10));
+            const uniqueDays = [...new Set(candleDates)].sort();
+
+            if (uniqueDays.length >= 2) {
+                const prevDate = uniqueDays[uniqueDays.length - 2];
+                const prevDayCandles = candles.filter(c => new Date(c.time * 1000).toISOString().startsWith(prevDate));
+                const prevHigh = Math.max(...prevDayCandles.map(c => c.high));
+                const prevLow = Math.min(...prevDayCandles.map(c => c.low));
+
+                series.createPriceLine({
+                    price: prevHigh,
+                    color: 'white',
+                    lineWidth: 1,
+                    lineStyle: 1,
+                    axisLabelVisible: false,
+                    title: 'Prev H'
+                });
+
+                series.createPriceLine({
+                    price: prevLow,
+                    color: 'white',
+                    lineWidth: 1,
+                    lineStyle: 1,
+                    axisLabelVisible: false,
+                    title: 'Prev L'
+                });
+                 // 🔥 ADD THIS BELOW FOR BULLISH/BEARISH LINES
+                const priceRange = prevHigh - prevLow;
+                const threshold = priceRange * 0.2611;
+
+                const todayDate = uniqueDays[uniqueDays.length - 1];
+                const todayCandles = candles.filter(c => new Date(c.time * 1000).toISOString().startsWith(todayDate));
+                const todayOpen = todayCandles?.[0]?.open;
+
+                if (todayOpen) {
+                    const bullishAbove = +(todayOpen + threshold).toFixed(2);
+                    const bearishBelow = +(todayOpen - threshold).toFixed(2);
+
+                    series.createPriceLine({
+                        price: bullishAbove,
+                        color: 'lime',
+                        title: '↑',
+                        lineWidth: 1,
+                        lineStyle: 2,
+                        axisLabelVisible: true
+                    });
+
+                    series.createPriceLine({
+                        price: bearishBelow,
+                        color: 'red',
+                        title: '↓',
+                        lineWidth: 1,
+                        lineStyle: 2,
+                        axisLabelVisible: true
+                    });
+                }
+            }
+
+            chartsLoaded++;
+
+            
+        }
+
+        // ✅ All charts created now
+        for (const symbol in liveOptionMap) {
+        const meta = liveOptionMap[symbol];
+        if (meta?.chart?.timeScale) {
+            meta.chart.timeScale().applyOptions({ rightOffset: 8 });
+        }
+        }
+        // ✅ When all charts are done
+        if (chartsLoaded === totalCharts) {
+            console.log("✅ All charts rendered. Connecting WebSocket...");
+            connectWebSocketAfterLoading();    // ✅ Step 1: WebSocket
+            triggerAvgAfter920();              // ✅ Step 2: AVG at 9:20
+        }
+
+        
+        // Tick speed updater
+        setInterval(() => {
+        const callSpeed = document.getElementById("callSpeed");
+        const putSpeed = document.getElementById("putSpeed");
+
+        // ✅ Save current values before reset
+        const currentCallSpeed = callTickCount;
+        const currentPutSpeed = putTickCount;
+
+        // ✅ Display tick speeds
+        callSpeed.innerText = `Speed: ${currentCallSpeed}/s`;
+        putSpeed.innerText = `Speed: ${currentPutSpeed}/s`;
+
+        callSpeed.style.color =
+            currentCallSpeed >= 6 ? "lime" :
+            currentCallSpeed >= 3 ? "orange" : "red";
+
+        putSpeed.style.color =
+            currentPutSpeed >= 6 ? "lime" :
+            currentPutSpeed >= 3 ? "orange" : "red";
+
+        callSpeed.style.textShadow = currentCallSpeed < 3 ? "0 0 6px red" : "none";
+        putSpeed.style.textShadow = currentPutSpeed < 3 ? "0 0 6px red" : "none";
+
+        // ✅ Market direction logic
+        const ltpChange = niftyLtp - niftyOpen;
+
+        let marketDirection = "–";
+
+        if (
+            currentCallSpeed > thresholds.callSpeedHigh &&
+            currentPutSpeed < thresholds.putSpeedModerate &&
+            ltpChange > thresholds.ltpChangeMin
+        ) {
+            marketDirection = "📈 Bullish";
+        } else if (
+            currentPutSpeed > thresholds.putSpeedHigh &&
+            currentCallSpeed < thresholds.callSpeedModerate &&
+            ltpChange < -thresholds.ltpChangeMin
+        ) {
+            marketDirection = "📉 Bearish";
+        } else if (
+            currentCallSpeed > thresholds.callSpeedModerate &&
+            currentPutSpeed > thresholds.putSpeedHigh
+        ) {
+            marketDirection = "⚠️ Active Both";
+        } else {
+            marketDirection = "🟡 Sideways";
+        }
+
+
+        const dirLabel = document.getElementById("marketDirectionLabel");
+        if (dirLabel) {
+            dirLabel.innerText = `Market: ${marketDirection}`;
+        }
+
+        // ✅ Reset after calculation
+        callTickCount = 0;
+        putTickCount = 0;
+        niftyPrevLtp = niftyLtp;
+
+    }, 1000);
+
+    }
+
+    function triggerAvgAfter920() {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+
+        const isAfter920 = hours > 9 || (hours === 9 && minutes >= 20);
+
+        if (!isAfter920) {
+            const msUntil920 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 20, 0) - now;
+            console.log(`⏳ Waiting ${Math.round(msUntil920 / 1000)}s for 9:20 AM to draw AVG lines...`);
+            setTimeout(triggerAvgAfter920, msUntil920);
+            return;
+        }
+
+        console.log("✅ It's after 9:20 AM — drawing AVG lines...");
+        for (const [strike, type] of allStrikes) {
+            computeRollingAvgFrom5MinTab(strike, type);
+        }
+    }
+
+    async function fetchOptionChain() {
+        const res = await fetch('/option-chain-summary');
+        const data = await res.json();
+
+        for (const option of data) {
+            // console.log("📥 Option from API:", option.symbol, "→ Exists?", !!liveOptionMap[option.symbol]);
+
+            const {
+            symbol, strike, type, ltp, prev_ltp, volume,
+            oi, prev_oi, iv, delta, gamma, vega
+            } = option;
+
+            const meta = liveOptionMap[symbol];
+            if (!meta) continue;
+            const tickSpeed = meta.tickSpeed || 0;  // 🧠 from WebSocket
+
+
+            const label = meta.label;
+
+            const ltpDelta = ltp - prev_ltp;
+            const score = Math.abs(ltpDelta) * volume;
+            const ivSpike = iv - (option.prevIV || iv) > 2;
+            const oiChange = oi - prev_oi;
+
+            // 🧠 Decide emojis and color classes
+            const arrow = ltpDelta > 0 ? "▲" : ltpDelta < 0 ? "🔻" : "⏸️";
+            const arrowColor = ltpDelta > 0 ? "green" : ltpDelta < 0 ? "red" : "gray";
+            const activityEmoji = score > 10000 ? "🔥" : score > 5000 ? "🟠" : score > 1000 ? "🟢" : "◻️";
+            const oiEmoji = volume > 1000 && oiChange > 0 ? "📈" :
+                            volume > 1000 && oiChange < 0 ? "📉" : "⏸️";
+
+            // 🖍️ Color rules
+            const ltpColor = ltpDelta > 0 ? "lime" : ltpDelta < 0 ? "red" : "white";
+            const activityColor = score > 10000 ? "red" : score > 5000 ? "orange" : score > 1000 ? "green" : "gray";
+            const oiColor = oiEmoji === "📈" ? "green" : oiEmoji === "📉" ? "red" : "gray";
+            const ivColor = ivSpike ? "orange" : "gray";
+            const deltaColor = type === "CALL" && delta > 0.6 ? "green" :
+                            type === "PUT" && delta < -0.6 ? "red" : "gray";
+            const gammaColor = gamma > 0.2 ? "yellow" : "gray";
+            const vegaColor = vega > 0.2 && ivSpike ? "violet" : "gray";
+
+            // ✅ Add LTP delta overlay on chart canvas
+
+
+            // ✅ Update floating label
+            meta.bottomLabel.innerHTML = `
+                <span style="color:${ltpColor};">${arrow} ${ltpDelta.toFixed(2)}</span>
+                <span class="badge ${activityColor}">${activityEmoji} ${(score / 1000).toFixed(1)}k</span>
+                <span class="badge ${oiColor}">${oiEmoji}</span>
+                <span class="badge ${ivColor}">IV:${iv.toFixed(1)}%</span>
+                <span class="badge ${deltaColor}">Δ:${delta.toFixed(2)}</span>
+                <span class="badge ${gammaColor}">⚡${formatSmall(gamma)}</span>
+
+                <span class="badge ${vegaColor}">📊${vega.toFixed(2)}</span>
+                `;
+            
+            checkOptionSignal(
+                symbol,
+                tickSpeed,
+                oi,
+                prev_oi,
+                ltp,
+                prev_ltp,
+                delta,
+                meta.prevDelta || 0,
+                iv,
+                meta.prevIv || 0,
+                vega,
+                gamma, 
+                meta.box
+                );
+
+                // 🧠 Store previous values for next round
+                meta.prevOi = oi;
+                meta.prevLtp = ltp;
+                meta.prevDelta = delta;
+                meta.prevIv = iv;
+
+        }
+        }
+
+    function formatSmall(val) {
+        if (typeof val !== "number" || isNaN(val)) return "–";
+        if (val >= 0.01) return val.toFixed(2);
+        if (val >= 0.0001) return val.toFixed(5);
+        return val.toExponential(1);  // e.g. 1.0e-5
+    }
+
+    function updateAllTimeframes(meta, tick) {
+        const now = Math.floor(Date.now() / 1000);
+        const timeframes = [1, 3, 5];
+
+        for (const tf of timeframes) {
+            const key = `data${tf}m`;
+            const bucket = Math.floor(now / (60 * tf)) * 60 * tf;
+            if (!meta[key]) meta[key] = [];
+
+            let last = meta[key].at(-1);
+            if (!last || last.time !== bucket) {
+            last = {
+                time: bucket,
+                open: tick.ltp,
+                high: tick.ltp,
+                low: tick.ltp,
+                close: tick.ltp
+            };
+            meta[key].push(last);
+            } else {
+            last.high = Math.max(last.high, tick.ltp);
+            last.low = Math.min(last.low, tick.ltp);
+            last.close = tick.ltp;
+            }
+
+            // trim old
+            if (meta[key].length > 300) meta[key].shift();
+        }
+
+        const visible = meta[`data${meta.currentTF}m`];
+        if (visible && visible.length > 0) {
+            if (!meta.lastUpdate) meta.lastUpdate = {};
+
+            if (visible.length > 0) {
+            const last = visible.at(-1);
+            const lastTime = meta.lastUpdate[meta.currentTF];
+
+            // Only update if new or changed
+            if (!lastTime || lastTime !== last.time || last.close !== meta.lastClose) {
+                meta.series.update(last);
+                meta.lastUpdate[meta.currentTF] = last.time;
+                meta.lastClose = last.close;
+            }
+            }
+            // 🔽 ADD BREAKOUT CHECK HERE
+            if (!meta.avgLine || !meta.avgReady) return;
+
+            
+
+
+            const avg = meta.avgLine.options().price;
+            const tf = meta.currentTF;
+            const data = meta[`data${tf}m`];
+            if (!data || data.length < 2) return;
+
+            const prevCandle = data[data.length - 2];
+            const currentCandle = data[data.length - 1];
+            // ✅ Breakout: Green candle breaks above Red candle
+            // ✅ Breakout: Green candle breaks above Red candle
+            const isPrevRed = prevCandle.close < prevCandle.open;
+            const isCurrentGreen = currentCandle.close > currentCandle.open;
+
+            if (
+            isPrevRed &&
+            isCurrentGreen &&
+            currentCandle.high > prevCandle.high &&
+            currentCandle.close > prevCandle.high
+            ) {
+            // Remove old Breakout markers
+            meta.markers = meta.markers.filter(m => m.text !== 'Breakout ↑');
+
+            meta.markers.push({
+                time: currentCandle.time,
+                position: 'aboveBar',
+                color: 'lime',
+                shape: 'arrowUp',
+                text: 'Breakout ↑'
+            });
+
+            meta.series.setMarkers(meta.markers);
+           
+            }
+
+            // ✅ Breakdown: Red candle breaks below Green candle
+            const isPrevGreen = prevCandle.close > prevCandle.open;
+            const isCurrentRed = currentCandle.close < currentCandle.open;
+
+            if (
+            isPrevGreen &&
+            isCurrentRed &&
+            currentCandle.low < prevCandle.low &&
+            currentCandle.close < prevCandle.low
+            ) {
+            // Remove old Breakdown markers
+            meta.markers = meta.markers.filter(m => m.text !== 'Breakdown ↓');
+
+            meta.markers.push({
+                time: currentCandle.time,
+                position: 'belowBar',
+                color: 'red',
+                shape: 'arrowDown',
+                text: 'Breakdown ↓'
+            });
+
+            meta.series.setMarkers(meta.markers);
+            
+            }
+
+
+            // 📈 Breakout UP
+            // 📈 Breakout UP
+            if (
+            prevCandle.close < avg &&
+            currentCandle.close > avg &&
+            !meta.avgBreakAbove
+            ) {
+            meta.avgBreakAbove = true;
+            meta.avgBreakBelow = false;
+
+            meta.markers.push({
+                time: currentCandle.time,
+                position: 'aboveBar',
+                color: 'yellow',
+                shape: 'arrowUp',
+                text: 'AVG Break ↑'
+            });
+
+
+            meta.series.setMarkers(meta.markers);
+            showToast(`📈 ${meta.label.innerText.split('|')[0]} closed above AVG ₹${avg.toFixed(2)}`, "info");
+            fetch("/send-telegram", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: `📈 ${meta.label.innerText.split('|')[0]} closed above AVG ₹${avg.toFixed(2)}`
+                })
+            });
+
+
+            // 🔥 FIXED FLASH CODE:
+            if (meta.box) {
+                meta.box.classList.add("flash-border");
+                setTimeout(() => meta.box.classList.remove("flash-border"), 10000);
+            }
+            }
+
+
+
+            // 📉 Breakdown DOWN
+            if (
+            prevCandle.close > avg &&
+            currentCandle.close < avg &&
+            !meta.avgBreakBelow
+            ) {
+            meta.avgBreakBelow = true;
+            meta.avgBreakAbove = false;
+
+            meta.markers = [{
+                time: currentCandle.time,
+                position: 'aboveBar',
+                color: 'yellow',
+                shape: 'arrowUp',
+                text: 'AVG Break ↑'
+            }];
+
+
+            meta.series.setMarkers(meta.markers);
+            showToast(`📉 ${meta.label.innerText.split('|')[0]} closed below AVG ₹${avg.toFixed(2)}`, "warning");
+            fetch("/send-telegram", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: `📉 ${meta.label.innerText.split('|')[0]} closed below AVG ₹${avg.toFixed(2)}`
+                })
+            });
+
+
+            // 🔥 FIXED FLASH CODE:
+            if (meta.box) {
+                meta.box.classList.add("flash-border");
+                setTimeout(() => meta.box.classList.remove("flash-border"), 10000);
+            }
+            }
+
+
+        }
+    }
+
+    function showToast(message, type = "success") {
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+
+        const icon = document.createElement("span");
+        icon.className = "toast-icon";
+
+        switch (type) {
+            case "success": icon.textContent = "✅"; break;
+            case "error": icon.textContent = "❌"; break;
+            case "warning": icon.textContent = "⚠️"; break;
+            case "info": icon.textContent = "ℹ️"; break;
+            default: icon.textContent = "🔔";
+        }
+
+        toast.appendChild(icon);
+        toast.appendChild(document.createTextNode(message));
+
+        document.getElementById("toast-container").appendChild(toast);
+
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    function aggregateCandles(candles, tf) {
+      const grouped = {};
+      candles.forEach(c => {
+        const bucket = Math.floor(c.time / (60 * tf)) * 60 * tf;
+        if (!grouped[bucket]) {
+        grouped[bucket] = {
+            time: bucket,
+            open: c.open,
+            high: c.high,
+            low: c.low,
+            close: c.close
+        };
+        } else {
+        grouped[bucket].high = Math.max(grouped[bucket].high, c.high);
+        grouped[bucket].low = Math.min(grouped[bucket].low, c.low);
+        grouped[bucket].close = c.close;
+        }
+    });
+    return Object.values(grouped).sort((a, b) => a.time - b.time);
+    }
+
+
+    const ltpHistoryMap = {}; // symbol → [{ time, ltp }]
+    const lastLTPMap = {};    // symbol → latest ltp
+
+    function updateHeaderSummary() {
+    const getDelta = (symbol) => {
+        const history = ltpHistoryMap[symbol];
+        const ltp = lastLTPMap[symbol] || 0;
+        if (!history || history.length < 2) return { ltp: ltp.toFixed(2), delta: "+0.00" };
+
+        const fiveSecAgo = Date.now() - 5000;
+        const old = history.find(h => h.time >= fiveSecAgo) || history[0];
+        const delta = ltp - old.ltp;
+        const sign = delta > 0 ? "+" : "";
+        return {
+        ltp: ltp.toFixed(2),
+        delta: `${sign}${delta.toFixed(2)}`
+        };
+    };
+
+    const expiry = "24 JUL";
+    const getSym = (strike, type) => `NIFTY ${expiry} ${strike} ${type}`;
+
+    const callITM = [atm - 150, atm - 100, atm - 50];
+    const callOTM = [atm + 50, atm + 100, atm + 150];
+    const putITM  = [atm + 150, atm + 100, atm + 50];
+    const putOTM  = [atm - 50, atm - 100, atm - 150];
+
+    const formatLine = (strikes, type) => {
+        return strikes.map(strike => {
+            const { delta } = getDelta(getSym(strike, type));
+            const deltaValue = parseFloat(delta);
+            const arrow = deltaValue > 0 ? "🔺" : deltaValue < 0 ? "🔻" : "⏸️";
+            const color = deltaValue > 0 ? "lime" : deltaValue < 0 ? "red" : "white";
+            return `<span style="color:${color}">${strike}: ${arrow} ${delta}</span>`;
+        }).join(" &nbsp; ");
+        };
+
+    
+
+    document.getElementById("callITMHeader").innerHTML = formatLine(callITM, "CALL");
+    document.getElementById("callOTMHeader").innerHTML = formatLine(callOTM, "CALL");
+    document.getElementById("putITMHeader").innerHTML  = formatLine(putITM,  "PUT");
+    document.getElementById("putOTMHeader").innerHTML  = formatLine(putOTM,  "PUT");
+    }
+
+    // function handleOrderClick(event, chart, series, symbol, side) {
+    // const bounds = chart.chartContainer.getBoundingClientRect();
+    // const x = event.clientX - bounds.left;
+    // const y = event.clientY - bounds.top;
+
+    // const time = chart.timeScale().coordinateToTime(x);
+    // const price = series.coordinateToPrice(y);
+
+    // if (time && price) {
+    //     // 🏷️ Optional: show marker on chart
+    //     series.createPriceLine({
+    //     price,
+    //     color: side === 'BUY' ? 'lime' : 'red',
+    //     lineWidth: 2,
+    //     lineStyle: 0,
+    //     title: side
+    //     });
+
+    //     // 🖨️ Console log (for testing)
+    //     console.log(`📍 ${side} → ${symbol} at ₹${price.toFixed(2)} (${new Date(time * 1000).toLocaleTimeString()})`);
+
+    //     // 🔁 Optional: Send to backend
+    //     /*
+    //     fetch('/place-order', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({
+    //         symbol,
+    //         side,
+    //         time,
+    //         price
+    //     })
+    //     });
+    //     */
+    // }
+    // }
+    function getLotQuantity() {
+        const multiplier = parseInt(document.getElementById("lotMultiplier")?.value || "1");
+        return Math.max(1, multiplier) * 75;
+    }
+
+    document.body.addEventListener("click", async function (e) {
+        if (!e.target.matches(".trade-btn")) return;
+
+        const symbol = e.target.dataset.symbol;
+        const action = e.target.dataset.side;
+        const meta = liveOptionMap[symbol];
+        const security_id = meta?.security_id;
+
+        if (!security_id) {
+            alert("❌ Security ID not found. Cannot place order.");
+            return;
+        }
+
+        const strikeMatch = symbol.match(/(\d{5})/);
+        const strike = strikeMatch ? parseFloat(strikeMatch[1]) : NaN;
+        const type = symbol.includes("PUT") ? "PUT" : "CALL";
+
+        // 🛡️ Step 1: Place Hedge BUY (only for SELL)
+        if (action === "SELL" && !isNaN(strike)) {
+            try {
+                const hedgeRes = await fetch(`/hedge-suggestion?strike=${strike}&type=${type}`);
+                const hedgeData = await hedgeRes.json();
+
+                if (hedgeData?.found) {
+                    const hedgeSymbol = `NIFTY 24 JUL ${hedgeData.strike} ${type}`;
+
+                    let hedgeId = liveOptionMap[hedgeSymbol]?.security_id;
+
+                    if (!hedgeId) {
+                        const hedgeIdRes = await fetch(`/get-security-id?symbol=${encodeURIComponent(hedgeSymbol)}`);
+                        const hedgeIdData = await hedgeIdRes.json();
+                        hedgeId = hedgeIdData.security_id;
+                        if (hedgeId) {
+                            liveOptionMap[hedgeSymbol] = {
+                                ...(liveOptionMap[hedgeSymbol] || {}),
+                                security_id: hedgeId
+                            };
+                        }
+                    }
+
+                    if (hedgeId) {
+                        const hedgeOrder = await fetch("/place-dhan-order", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                security_id: hedgeId,
+                                side: "BUY"
+                            })
+                        });
+
+                        const hedgeResp = await hedgeOrder.json();
+                        if (hedgeResp.orderId) {
+                            showToast(`🛡️ Hedge BUY placed: ${hedgeSymbol}`, "info");
+
+                            // 🧾 Add hedge row to trade monitor
+                            const hedgePrice = hedgeData.ltp || 0;
+                            const hedgeRow = document.createElement("tr");
+                            hedgeRow.dataset.symbol = hedgeSymbol;
+                            hedgeRow.dataset.side = "BUY";
+
+                            hedgeRow.innerHTML = `
+                                <td class="green">HEDGE</td>
+                                <td class="green">Yes</td>
+                                <td style="color:khaki;">₹${hedgePrice.toFixed(2)}</td>
+                                <td class="green">Yes</td>
+                                <td class="trailing-cell" style="color:cyan; cursor:pointer;" title="Click to edit trailing %">25%</td>
+
+                                <td style="color:white;">-</td>
+                                <td style="color:white;">-</td>
+                                <td><button class="exit-btn">EXIT</button></td>
+                            `;
+                            document.getElementById("trade-rows").appendChild(hedgeRow);
+                            document.getElementById("trade-window").style.display = "block";
+                        } else {
+                            showToast(`⚠️ Hedge order failed: ${hedgeResp.error}`, "warning");
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("❌ Hedge error:", err);
+                showToast("❌ Failed to place hedge", "error");
+            }
+        }
+
+        // ✅ Step 2: Place main BUY or SELL order
+        try {
+            const quantity = getLotQuantity();
+
+            const orderRes = await fetch("/place-dhan-order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    security_id,
+                    side: action,
+                    quantity: quantity
+                })
+            });
+
+        const orderData = await orderRes.json();
+        if (orderData.orderId) {
+            showToast(`✅ ${action} order placed for ${symbol}`, "success");
+            fetch("/send-telegram", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                message: `🟢 ${action} order placed: ${symbol}`
+            })
+            });
+
+
+            const tfKey = `data${meta?.currentTF || 3}m`;
+            const lastCandle = meta?.[tfKey]?.at(-1);
+            let entry = 0;
+
+            // ⏳ Wait for real trade info
+            await new Promise(res => setTimeout(res, 1200));
+
+            const tradeRes = await fetch(`/order-trade/${orderData.orderId}`);
+            const tradeData = await tradeRes.json();
+            entry = tradeData.tradedPrice || 0;
+
+
+            if (entry) {
+                const slTrigger = action === "BUY" ? entry - 10 : entry + 10;
+                const slSide = action === "BUY" ? "SELL" : "BUY";
+
+                try {
+                    const slmRes = await fetch("/place-dhan-order", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            security_id,
+                            side: slSide,
+                            order_type: "STOP_LOSS_MARKET",
+                            trigger_price: slTrigger
+                        })
+                    });
+
+                    const slmData = await slmRes.json();
+                    if (slmData.orderId) {
+                        showToast(`🛑 SLM ${slSide} @ ₹${slTrigger.toFixed(2)} placed`, "info");
+                    } else {
+                        showToast(`⚠️ SLM failed: ${slmData.error}`, "warning");
+                    }
+                } catch (err) {
+                    console.error("SLM Error:", err);
+                    showToast("❌ SLM placement failed", "error");
+                }
+            }
+        }
+
+
+            if (orderData.orderId) {
+                showToast(`✅ ${action} order placed for ${symbol}`, "success");
+
+                const tfKey = `data${meta?.currentTF || 3}m`;
+                const lastCandle = meta?.[tfKey]?.at(-1);
+                const price = lastCandle?.close;
+
+                if (price) {
+                    const tradeRow = document.createElement("tr");
+                    tradeRow.dataset.symbol = symbol;
+                    tradeRow.dataset.side = action;
+                    tradeRow.dataset.entry = price.toFixed(2);
+                    // ✅ Add this line to store quantity in lots
+                    const lotQty = parseInt(document.getElementById("lotMultiplier")?.value || "1");
+                    tradeRow.dataset.qty = lotQty;
+
+                    tradeRow.dataset.highLtp = price.toFixed(2);  // <-- ADD THIS HERE
+
+                    const fixedSL = action === "BUY" ? price - 10 : price + 10;
+                    tradeRow.dataset.sl = fixedSL.toFixed(2);
+                    // ✅ Add SL line to chart
+                    if (meta?.series) {
+                        if (meta.slLine) {
+                            meta.series.removePriceLine(meta.slLine);
+                        }
+
+                        meta.slLine = meta.series.createPriceLine({
+                            price: fixedSL,
+                            color: 'orange',
+                            lineWidth: 2,
+                            lineStyle: 1,
+                            axisLabelVisible: true,
+                            title: 'SL'
+                        });
+                    }
+
+                    tradeRow.dataset.slLevel = "0"; // trailing starts from ₹500+
+                    tradeRow.dataset.maxPnl = "0"; // P&L peak tracker
+                    tradeRow.dataset.exited = "0"; // not yet exited
+
+                    // Display SL & SL Changed
+                    const lotMultiplier = parseInt(document.getElementById("lotMultiplier")?.value || "1");
+
+                    const slChangedCell = tradeRow.querySelector("td:nth-child(2)");
+                    const slCell = tradeRow.querySelector("td:nth-child(4)");
+                    if (slChangedCell) slChangedCell.textContent = "Yes";
+                    if (slCell) slCell.textContent = `₹${fixedSL.toFixed(2)}`;
+
+
+
+                    tradeRow.innerHTML = `
+                        <td style="color:khaki;">${symbol}</td>
+                        <td>${lotMultiplier}</td> <!-- 🔹 Lot multiplier -->
+                        <td>
+                         <button class="trail-toggle-btn" data-enabled="1"
+                             style="background:#111; color:cyan; border:1px solid cyan; border-radius:4px; padding:2px 6px; cursor:pointer;"
+                             title="Pause/Resume Trailing">⏸️</button>
+                        </td>
+
+                        <td class="${action === 'BUY' ? 'green' : 'red'}">${action}</td>
+                        <td class="sl-changed-cell" style="color:red;">No</td>
+                        <td style="color:khaki;">₹${price.toFixed(2)}</td>
+                        <td class="ltp-cell" style="color:white;">--</td>
+                        <td class="sl-cell" style="color:orange; cursor:pointer;">₹${fixedSL.toFixed(2)}</td>
+                        <td class="trailing-cell" style="color: gray;">🔒</td>
+                        <td class="points-cell" style="color:white;">--</td> <!-- ✅ NEW -->
+
+                        <td class="high-ltp-cell" style="color:white;">₹${price.toFixed(2)}</td>
+                        <td class="pnl-cell" style="color:white;">--</td>
+                        <td><button class="exit-btn">EXIT</button></td>
+                    `;
+
+
+
+                    document.getElementById("trade-rows").appendChild(tradeRow);
+                    document.getElementById("trade-window").style.display = "block";
+                }
+            } else {
+                showToast(`❌ Order Failed: ${orderData.error || "Unknown"}`, "error");
+            }
+        } catch (err) {
+            console.error("Order Error:", err);
+            showToast("❌ Failed to place order", "error");
+        }
+    });
+    
+    function updateTotalPnL() {
+        let total = 0;
+        document.querySelectorAll("#trade-rows tr").forEach(row => {
+            const pnlText = row.querySelector(".pnl-cell")?.innerText || "₹0";
+            const pnl = parseFloat(pnlText.replace("₹", "")) || 0;
+            total += pnl;
+        });
+
+        const totalCell = document.getElementById("total-pnl");
+        if (totalCell) {
+            totalCell.innerText = `₹${total.toFixed(2)}`;
+            totalCell.style.color = total > 0 ? "lime" : total < 0 ? "red" : "white";
+        }
+    }
+
+    let callTickCount = 0;
+    let putTickCount = 0;
+
+    function checkOptionSignal(symbol, tickSpeed, oi, prevOi, ltp, prevLtp, delta, prevDelta, iv, prevIv, vega, gamma, box) {
+        const meta = liveOptionMap[symbol];
+        if (!meta) return;
+
+            // ✅ Glow code starts here
+        const container = meta.container;
+        const bullishLevel = meta.bullishLevel;
+        const bearishLevel = meta.bearishLevel;
+
+        if (bullishLevel && ltp > bullishLevel) {
+            container.classList.remove("chart-glow-bullish");
+            void container.offsetWidth;
+            container.classList.add("chart-glow-bullish");
+            meta.glowState = 'bullish';
+        } else if (bearishLevel && ltp < bearishLevel) {
+            container.classList.remove("chart-glow-bearish");
+            void container.offsetWidth;
+            container.classList.add("chart-glow-bearish");
+            meta.glowState = 'bearish';
+        } else if (ltp <= bullishLevel && ltp >= bearishLevel && meta.glowState !== '') {
+            meta.glowState = ''; // reset if back inside range
+        }
+
+        const oiChange = oi - prevOi;
+        const ltpChange = ltp - prevLtp;
+        const deltaChange = delta - prevDelta;
+        const ivChange = iv - prevIv;
+        const ivSpike = ivChange > 0.5;
+        const vegaSpike = vega > 0.25;
+        const gammaSpike = gamma > 0.05;
+
+        const signal = (
+            tickSpeed > 1 &&
+            oiChange > 0 &&
+            ltpChange > 0 &&
+            deltaChange > 0 &&
+            ivSpike &&
+            vegaSpike &&
+            gammaSpike
+        );
+
+        // // ✅ 1 toast per symbol per second
+        // if (!meta.lastSignalToast || Date.now() - meta.lastSignalToast > 1000) {
+        //     meta.lastSignalToast = Date.now();
+
+        //     showToast(
+        //         `🧪 ${symbol} | TS:${tickSpeed}, OIΔ:${oiChange}, LTPΔ:${ltpChange.toFixed(2)}, ΔΔ:${deltaChange.toFixed(2)}, IVΔ:${ivChange.toFixed(2)}, V:${vega.toFixed(2)}, Γ:${formatSmall(gamma)}`,
+        //         "info"
+        //     );
+        // }
+
+        if (signal && box) {
+            box.classList.add("flash-border");
+            setTimeout(() => box.classList.remove("flash-border"), 10000);
+            console.log(`🚀 6/6 SIGNAL: ${symbol} (Vega included)`);
+        }
+    }
+
+
+
+    async function connectWebSocketAfterLoading() {
+        const symbols = Object.keys(liveOptionMap);
+        const securityMap = {};
+
+        for (const symbol of symbols) {
+            try {
+                const res = await fetch(`/get-security-id?symbol=${encodeURIComponent(symbol)}`);
+                const data = await res.json();
+                if (data.security_id) {
+                    securityMap[data.security_id] = symbol;
+                    liveOptionMap[symbol].security_id = data.security_id;  // ✅ Store here
+                }
+            } catch (err) {
+                console.warn(`⚠️ Failed to get ID for ${symbol}`, err);
+            }
+        }
+
+        const securityIds = Object.keys(securityMap);
+
+        const socket = new WebSocket(`ws://${location.host}/ws-tabs`);
+        socket.onopen = () => {
+            socket.send(JSON.stringify({
+                type: "subscribe_tabs",
+                ids: securityIds
+            }));
+        };
+
+        socket.onmessage = (event) => {
+        const incoming = JSON.parse(event.data);
+        const tickArray = Array.isArray(incoming) ? incoming : [incoming];
+
+        for (const data of tickArray) {
+            if (data.type !== "tab_tick") continue;
+
+            const symbol = securityMap[data.security_id];
+            if (!symbol) continue;
+
+            if (symbol.includes("CALL")) callTickCount++;
+            if (symbol.includes("PUT"))  putTickCount++;
+            const nowSec = Math.floor(Date.now() / 1000);
+            if (!tickStats[symbol]) {
+            tickStats[symbol] = { count: 0, lastSec: nowSec, speed: 0 };
+            }
+            const metaTick = tickStats[symbol];
+            
+            if (nowSec === metaTick.lastSec) {
+            metaTick.count += 1;
+            } else {
+            metaTick.speed = metaTick.count;
+            metaTick.count = 1;
+            metaTick.lastSec = nowSec;
+            }
+            const tickSpeed = metaTick.speed || 0;
+            liveOptionMap[symbol].tickSpeed = tickSpeed;  // ✅ Save it here
+
+
+
+
+            const now = Date.now();
+
+            lastLTPMap[symbol] = data.ltp;
+            if (!ltpHistoryMap[symbol]) ltpHistoryMap[symbol] = [];
+            ltpHistoryMap[symbol].push({ time: now, ltp: data.ltp });
+            ltpHistoryMap[symbol] = ltpHistoryMap[symbol].filter(entry => now - entry.time <= 10000);
+
+            updateHeaderSummary();
+
+            const chartMeta = liveOptionMap[symbol];
+            if (chartMeta?.series && data.open > 0 && !chartMeta.openLine) {
+                chartMeta.openLine = chartMeta.series.createPriceLine({
+                    price: data.open,
+                    color: 'yellow',
+                    lineWidth: 2,
+                    lineStyle: 0,
+                    axisLabelVisible: false,
+                    title: ''
+                });
+            }
+
+            if (!chartMeta) continue;
+
+            // ✅ Update any trade rows for this symbol
+            document.querySelectorAll(`#trade-rows tr[data-symbol="${symbol}"]`).forEach(row => {
+                const ltp = data.ltp;
+                const side = row.dataset.side;
+                const entryPrice = parseFloat(row.dataset.entry);
+                // ✅ Highest LTP tracker
+                let prevHighLtp = parseFloat(row.dataset.highLtp || entryPrice);
+                if (ltp > prevHighLtp) {
+                    prevHighLtp = ltp;
+                    row.dataset.highLtp = prevHighLtp.toFixed(2);
+                    const highLtpCell = row.querySelector(".high-ltp-cell");
+                    if (highLtpCell) highLtpCell.innerText = `₹${prevHighLtp.toFixed(2)}`;
+                }
+
+                const pnl = (side === "BUY" ? ltp - entryPrice : entryPrice - ltp) * 75;
+
+                // ✅ Update LTP cell
+                const ltpCell = row.querySelector(".ltp-cell");
+                if (ltpCell) {
+                    ltpCell.innerText = `₹${ltp.toFixed(2)}`;
+                    ltpCell.style.color = ltp > entryPrice ? "lime" : ltp < entryPrice ? "red" : "white";
+                }
+
+
+                // ✅ Update P&L cell
+                const pnlCell = row.querySelector(".pnl-cell");
+                if (pnlCell) {
+                    pnlCell.innerText = `₹${pnl.toFixed(2)}`;
+                    pnlCell.style.color = pnl > 0 ? "lime" : pnl < 0 ? "red" : "white";
+                }
+                // ✅ Update Points = PnL / (Qty × 75)
+                const pointsCell = row.querySelector(".points-cell");
+                const qty = parseInt(row.dataset.qty || "1") * 75;
+                if (pointsCell && qty > 0) {
+                    const points = pnl / qty;
+                    pointsCell.innerText = `${points.toFixed(2)}`;
+                    pointsCell.style.color = points > 0 ? "lime" : points < 0 ? "red" : "white";
+                }
+
+
+                // ✅ Track and update max PnL per row
+                let maxPnl = parseFloat(row.dataset.maxPnl || "0");
+                if (pnl > maxPnl) {
+                    maxPnl = pnl;
+                    row.dataset.maxPnl = maxPnl.toFixed(2);
+                }
+
+                // ✅ Trailing SL activation after ₹500
+                const slLevel = parseInt(row.dataset.slLevel || "0");
+                if (maxPnl >= 500 && slLevel === 0) {
+                    const newSL = side === "BUY" ? entryPrice + 1 : entryPrice - 1;
+                    row.dataset.sl = newSL.toFixed(2);
+                    const meta = liveOptionMap[symbol];
+                    fetch("/send-telegram", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            message: `🔁 Trailing SL activated for ${symbol} at ₹${newSL.toFixed(2)}`
+                        })
+                    });
+
+                    if (meta?.series) {
+                        if (meta.slLine) {
+                            meta.series.removePriceLine(meta.slLine);
+                        }
+
+                        meta.slLine = meta.series.createPriceLine({
+                            price: parseFloat(newSL),
+                            color: 'orange',
+                            lineWidth: 2,
+                            lineStyle: 1,
+                            axisLabelVisible: true,
+                            title: 'SL'
+                        });
+                    }
+
+                    row.dataset.slLevel = "1";
+
+                    const slCell = row.querySelector(".sl-cell");
+                    if (slCell) slCell.textContent = `₹${newSL.toFixed(2)}`;
+
+                    const slChangedCell = row.querySelector(".sl-changed-cell");
+                    if (slChangedCell) {
+                        slChangedCell.textContent = "Yes";
+                        slChangedCell.style.color = "lime";
+                    }
+
+                    showToast(`📈 SL moved to Entry ± ₹2 at ₹${newSL.toFixed(2)}`, "info");
+                }
+
+                // ✅ Exit if profit drops >20% from max
+                const profitDrop = maxPnl - pnl;
+                const exited = row.dataset.exited === "1";
+                // 🧠 Dynamically assign trailing % based on maxPnl
+                const previousRatio = parseFloat(row.dataset.trailing || "0");
+                let trailRatio = null;
+
+                if (maxPnl >= 1500) trailRatio = 0.20;
+                else if (maxPnl >= 1250) trailRatio = 0.30;
+                else if (maxPnl >= 1000) trailRatio = 0.40;
+                else if (maxPnl >= 750)  trailRatio = 0.50;
+                else if (maxPnl >= 500)  trailRatio = 0.60;
+
+                if (trailRatio !== null) {
+                    // Only show toast when it tightens
+                    if (previousRatio && trailRatio < previousRatio) {
+                        showToast(`📉 Trailing tightened: ${Math.round(previousRatio * 100)}% → ${Math.round(trailRatio * 100)}%`, "warning");
+                    }
+                    row.dataset.trailing = trailRatio;
+                }
+
+
+                // 💾 Store updated value per row
+                if (trailRatio !== null) {
+                    row.dataset.trailing = trailRatio;
+                }
+
+                const trailingCell = row.querySelector(".trailing-cell");
+
+                if (trailingCell) {
+                    if (trailRatio !== null) {
+                        trailingCell.textContent = `${Math.round(trailRatio * 100)}%`;
+                        trailingCell.style.color = "cyan";
+                    } else {
+                        trailingCell.textContent = "🔒";
+                        trailingCell.style.color = "gray";
+                    }
+                }
+
+
+                if (!exited && slLevel >= 1 && trailRatio !== null && profitDrop >= maxPnl * trailRatio) {
+                    const meta = liveOptionMap[symbol];
+
+                    // ✅ Mark exited early to prevent double orders
+                    row.dataset.exited = "1";
+                    row.style.backgroundColor = "#333300";
+
+                    // ✅ Remove SL line
+                    if (meta?.series && meta.slLine) {
+                        meta.series.removePriceLine(meta.slLine);
+                        delete meta.slLine;
+                    }
+
+                    // ✅ Clear SL cell
+                    const slCell = row.querySelector(".sl-cell");
+                    if (slCell) slCell.textContent = "—";
+
+                    // ✅ Notify
+                    fetch("/send-telegram", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ message: `⚠️ Trailing SL hit — exiting ${symbol}` })
+                    });
+
+                    const oppositeSide = side === "BUY" ? "SELL" : "BUY";
+                    const security_id = liveOptionMap[symbol]?.security_id;
+
+                    if (security_id) {
+                        const quantity = getLotQuantity();  // 🔹 Use multiplier
+                        fetch("/place-dhan-order", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ security_id, side: oppositeSide, quantity })
+                        })
+
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.orderId) {
+                                showToast(`🚨 Profit fell >${Math.round(trailRatio * 100)}% from peak — exited`, "warning");
+
+                                row.remove();
+                                updateTotalPnL();
+                            } else {
+                                showToast(`⚠️ Exit failed: ${data.error || "Unknown"}`, "error");
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Exit error:", err);
+                            showToast("❌ Exit error", "error");
+                        });
+                    }
+                
+
+                }
+
+                // ✅ SL HIT → exit
+                const sl = parseFloat(row.dataset.sl);
+                const slHit = side === "BUY" ? ltp <= sl : ltp >= sl;
+                if (!exited && slHit) {
+                    row.dataset.exited = "1";
+                    row.style.backgroundColor = "#330000";
+                    
+                    const meta = liveOptionMap[symbol];
+                    if (meta?.series && meta.slLine) {
+                        meta.series.removePriceLine(meta.slLine);
+                        delete meta.slLine;
+                    }
+
+                    const oppositeSide = side === "BUY" ? "SELL" : "BUY";
+                    const security_id = liveOptionMap[symbol]?.security_id;
+
+                    if (security_id) {
+                        const quantity = getLotQuantity();  // 🔹 Use multiplier
+                        fetch("/place-dhan-order", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ security_id, side: oppositeSide, quantity })
+                        })
+
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.orderId) {
+                                showToast(`🛑 SL HIT — ${oppositeSide} placed`, "warning");
+                                row.remove();
+                                updateTotalPnL();
+                            } else {
+                                showToast(`⚠️ Exit Failed: ${data.error || "Unknown"}`, "error");
+                            }
+                            fetch("/send-telegram", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    message: `🚨 SL HIT for ${symbol}`
+                                })
+                            });
+
+                        })
+                        .catch(err => {
+                            console.error("Exit error:", err);
+                            showToast("❌ Exit error", "error");
+                        });
+                    }
+                }
+            });
+
+            updateTotalPnL();
+
+
+
+
+            const { series, label } = chartMeta;
+            updateAllTimeframes(chartMeta, {
+                ltp: data.ltp,
+                open: data.open,
+                high: data.high,
+                low: data.low,
+                close: data.close  // Use ltp as close if no explicit close
+            });
+
+
+            
+
+            const parts = symbol.split(" ");
+            const strike = parts[2];
+            const type = parts[3];
+            const ltpColor = data.ltp > data.open ? "lime" : data.ltp < data.open ? "red" : "white";
+
+            label.style.color = ltpColor;
+
+            const avg = chartMeta?.avgLine?.options()?.price ?? null;
+            let hMinusAvgDisplay = "";
+
+            if (avg !== null) {
+                const hMinusAvg = (data.ltp - avg).toFixed(2);
+                const hAvgColor = hMinusAvg >= 0 ? "lime" : "red";
+                hMinusAvgDisplay = `<span style="color:${hAvgColor};">H-AVG: ₹${hMinusAvg}</span>`;
+            }
+
+            label.innerHTML = `
+            <button class="trade-btn buy" data-symbol="${symbol}" data-side="BUY">BUY</button>
+            <button class="trade-btn sell" data-symbol="${symbol}" data-side="SELL">SELL</button>
+            &nbsp;&nbsp;&nbsp;
+            ${strike} ${type} |
+            O: ₹${data.open} H: ₹${data.high} L: ₹${data.low}
+            <span style="color:${ltpColor};">LTP: ₹${data.ltp}</span>
+            ${hMinusAvgDisplay}
+            `;
+
+            if (avg !== null) {
+                const hMinusAvg = +(data.ltp - avg).toFixed(2);  // ensure it's a number
+                chartMeta.hMinusAvg = hMinusAvg;                // ✅ Store for total
+
+                // ✅ Compute and update totals
+                let callTotal = 0;
+                let putTotal = 0;
+
+                for (const key in liveOptionMap) {
+                    const meta = liveOptionMap[key];
+                    if (!meta?.hMinusAvg || isNaN(meta.hMinusAvg)) continue;
+                    if (key.includes("CALL")) callTotal += meta.hMinusAvg;
+                    if (key.includes("PUT"))  putTotal += meta.hMinusAvg;
+                }
+
+                // ✅ Update UI spans
+                const callHMA = document.getElementById("callHMA");
+                const putHMA  = document.getElementById("putHMA");
+                if (callHMA) {
+                    const callColor = callTotal >= 0 ? "lime" : "red";
+                    callHMA.innerHTML = `CALL H–AVG: <span style="color:${callColor};">₹${callTotal.toFixed(2)}</span>`;
+                }
+                if (putHMA) {
+                    const putColor = putTotal >= 0 ? "lime" : "red";
+                    putHMA.innerHTML = `PUT H–AVG: <span style="color:${putColor};">₹${putTotal.toFixed(2)}</span>`;
+                }
+
+            }
+
+
+
+
+            if (chartMeta.highLine) chartMeta.series.removePriceLine(chartMeta.highLine);
+
+            if (chartMeta.lowLine)  chartMeta.series.removePriceLine(chartMeta.lowLine);
+
+
+            chartMeta.highLine = series.createPriceLine({
+                price: data.high,
+                color: 'red',
+                lineWidth: 2,
+                lineStyle: 0,
+                axisLabelVisible: true,
+                title: 'H'
+            });
+            // 🔁 Remove old High-25 line if it exists
+            if (chartMeta.highMinus25Line) {
+                chartMeta.series.removePriceLine(chartMeta.highMinus25Line);
+            }
+
+            // 🧠 Create new High - 25 line
+            const highMinus25 = data.high - 25;
+            chartMeta.highMinus25Line = chartMeta.series.createPriceLine({
+                price: highMinus25,
+                color: 'purple',
+                lineWidth: 2,
+                lineStyle: 2, // dashed
+                axisLabelVisible: false,
+                title: ''
+            });
+
+
+            chartMeta.lowLine = series.createPriceLine({
+                price: data.low,
+                color: 'blue',
+                lineWidth: 1,
+                lineStyle: 0,
+                axisLabelVisible: true,
+                title: 'L'
+            });
+        }
+    };
+
+    
+
+        socket.onclose = () => console.warn("📡 Tabs WebSocket closed.");
+    }
+
+    window.addEventListener("DOMContentLoaded", loadCharts);
+    setInterval(fetchOptionChain, 3000);  // ✅ AUTO-REFRESH EVERY 3 SECONDS
+
+    setInterval(() => {
+        const now = new Date();
+        const nowSec = Math.floor(now.getTime() / 1000);
+
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+
+        const isMarketClosed = hours > 15 || (hours === 15 && minutes >= 30);
+
+        for (const meta of Object.values(liveOptionMap)) {
+            if (!meta.series || !meta.countdownLabel) continue;
+
+            const tf = meta.currentTF || 3;
+            const bucketStart = Math.floor(nowSec / (60 * tf)) * 60 * tf;
+            const secondsLeft = (bucketStart + 60 * tf) - nowSec;
+
+            const min = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+            const sec = String(secondsLeft % 60).padStart(2, '0');
+
+            const ltp = meta.lastClose || (meta[`data${tf}m`]?.slice(-1)?.[0]?.close ?? 0);
+            if (!ltp) continue;
+
+            const coord = meta.series.priceToCoordinate?.(ltp);
+            if (coord === undefined || coord === null) continue;
+
+            const label = meta.countdownLabel;
+
+            if (isMarketClosed) {
+            label.style.display = "none";  // ⛔ Hide timer after 3:30 PM
+            } else {
+            label.innerText = `${min}:${sec}`;
+            label.style.display = "block";
+            label.style.left = '8px';
+            label.style.top = `${coord + 18}px`;
+            }
+        }
+    }, 1000);
+
+
+
+
+
+    window.addEventListener("DOMContentLoaded", () => {
+
+    // ✅ CLOSE button
+    document.getElementById("close-trade-window").addEventListener("click", () => {
+        document.getElementById("trade-window").style.display = "none";
+    });
+
+    // ✅ MINIMIZE button
+    document.getElementById("minimize-trade-window").addEventListener("click", () => {
+        const table = document.querySelector(".trade-table");
+        table.style.display = table.style.display === "none" ? "table" : "none";
+    });
+
+    // ✅ EXIT button (inside table rows)
+    // ✅ Helper function (ensure it's declared somewhere above)
+    function getLotQuantity() {
+        const multiplier = parseInt(document.getElementById("lotMultiplier")?.value || "1");
+        return Math.max(1, multiplier) * 75;
+    }
+
+    // ✅ EXIT button handler
+    document.getElementById("trade-rows").addEventListener("click", function (e) {
+        if (e.target.matches(".exit-btn")) {
+            const row = e.target.closest("tr");
+            const symbol = row.dataset.symbol;
+            const originalSide = row.dataset.side;
+            const oppositeSide = originalSide === "BUY" ? "SELL" : "BUY";
+            const security_id = liveOptionMap[symbol]?.security_id;
+
+            if (!security_id) {
+                alert("❌ Security ID not found for exit.");
+                return;
+            }
+
+            const quantity = getLotQuantity(); // ✅ Use the multiplier
+
+            fetch("/place-dhan-order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ security_id, side: oppositeSide, quantity })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.orderId) {
+                    showToast(`✅ ${oppositeSide} order placed for ${symbol}`, "success");
+                    row.remove(); // ✅ Remove exited trade row
+                } else {
+                    showToast(`❌ Order Failed: ${data.error || "Unknown error"}`, "error");
+                }
+            })
+            .catch(err => {
+                alert("❌ Error sending exit order");
+                console.error(err);
+            });
+        }
+    });
+
+
+    });
+
+
+    
+
+
+    // 📌 Add this AFTER the loadCharts listener
+    document.querySelectorAll('.tf-buttons').forEach(group => {
+    const type = group.dataset.type;
+
+    group.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+        const tf = parseInt(btn.dataset.tf, 10);
+
+        // Update active styling
+        group.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Update all charts of this type
+        for (const [symbol, meta] of Object.entries(liveOptionMap)) {
+            if (!symbol.includes(type)) continue;
+            meta.currentTF = tf;
+            const key = `data${tf}m`;
+            if (!meta.renderedOnce) {
+            meta.series.setData(meta[key] || []);
+            meta.renderedOnce = true;
+        } else {
+            // ✅ Just update last candle for visible TF
+            const latest = (meta[key] || []).at(-1);
+            if (latest) {
+                meta.series.update(latest);
+            }
+        }
+
+
+
+        }
+        });
+        
+    });
+    });
+
+    
+    let expandedBox = null;
+
+    function enableDoubleClickFullscreen(chartBox, chartObj) {
+    chartBox.addEventListener("dblclick", () => {
+        const isExpanded = chartBox.classList.contains("fullscreen-chart");
+
+        if (!isExpanded) {
+        // 🧠 Store initial layout ONLY ON FIRST EXPAND
+        if (!chartBox.dataset.origGridW) {
+            chartBox.dataset.origGridW = chartBox.offsetWidth;
+            chartBox.dataset.origGridH = chartBox.offsetHeight;
+        }
+
+        chartBox.classList.add("fullscreen-chart");
+
+        // Hide all other charts
+        document.querySelectorAll(".chart-box").forEach(box => {
+            if (box !== chartBox) box.classList.add("hidden-chart");
+        });
+
+        chartBox.style.position = "fixed";
+        chartBox.style.inset = "0";
+        chartBox.style.zIndex = "9999";
+        chartBox.style.width = "100vw";
+        chartBox.style.height = "100vh";
+
+        chartObj.resize(window.innerWidth, window.innerHeight - 30);
+        expandedBox = chartBox;
+        } else {
+        chartBox.classList.remove("fullscreen-chart");
+
+        // Unhide all charts
+        document.querySelectorAll(".chart-box").forEach(box => {
+            box.classList.remove("hidden-chart");
+        });
+
+        chartBox.style.position = "";
+        chartBox.style.inset = "";
+        chartBox.style.zIndex = "";
+        chartBox.style.width = "";
+        chartBox.style.height = "";
+
+        // 🧠 Use stored original size
+        const w = parseInt(chartBox.dataset.origGridW);
+        const h = parseInt(chartBox.dataset.origGridH);
+        chartObj.resize(w, h);
+
+        expandedBox = null;
+        }
+    });
+    }
+
+    // 🧠 ESC key = exit fullscreen
+    document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && expandedBox) {
+        expandedBox.dispatchEvent(new Event("dblclick"));
+    }
+    });
+
+
+    
+
+    </script>
+    
+
+
+    <div id="trade-window" style="display: none;">
+    <div class="trade-window-header">
+        <span class="title">📊 Trades Monitor</span>
+        <div class="window-controls">
+        <span id="minimize-trade-window" title="Minimize">🗕</span>
+        <span id="close-trade-window" title="Close">❌</span>
+        </div>
+    </div>
+    <table class="trade-table">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Qty</th> <!-- 🔹 NEW: lot multiplier -->
+                <th>🔁</th> <!-- New Trailing Toggle Column -->
+
+                <th>Side</th>
+                <th>SL Changed</th>
+                <th>Entry</th>
+                <th>LTP</th>
+                <th>SL</th>
+                <th>Trailing</th>
+                <th>Points</th>  <!-- ✅ NEW -->
+
+                <th>Highest LTP</th>
+                <th>P&L</th>
+                <th>Exit</th>
+            </tr>
+        </thead>
+
+        <tbody id="trade-rows">
+        <!-- Trade rows go here -->
+        </tbody>
+
+          <tfoot>
+                <tr>
+                <td colspan="11" style="text-align: right; font-weight: bold;">Total P&L</td>
+                <td id="total-pnl" style="color:white;">₹0.00</td>
+                <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <script>
+
+
+    
+    function makeDraggable(panel, handle) {
+        let isDragging = false;
+        let offsetX = 0, offsetY = 0;
+
+        handle.addEventListener("mousedown", function(e) {
+            isDragging = true;
+            const rect = panel.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            document.body.style.userSelect = "none";
+        });
+
+        document.addEventListener("mousemove", function(e) {
+            if (!isDragging) return;
+            panel.style.left = `${e.clientX - offsetX}px`;
+            panel.style.top = `${e.clientY - offsetY}px`;
+            panel.style.transform = "none";  // Remove transform while dragging
+        });
+
+        document.addEventListener("mouseup", function() {
+            isDragging = false;
+            document.body.style.userSelect = "";
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const tradeWindow = document.getElementById("trade-window");
+        const tradeHeader = tradeWindow.querySelector(".trade-window-header");
+        makeDraggable(tradeWindow, tradeHeader);
+    });
+
+    let niftyLtp = 0;
+    let niftyOpen = 0;
+    // ✅ Configurable market signal thresholds
+    const thresholds = {
+        callSpeedHigh: 7,
+        putSpeedHigh: 7,
+        callSpeedModerate: 4,
+        putSpeedModerate: 4,
+        ltpChangeMin: 1.5
+    };
+
+
+
+
+    window.addEventListener("message", (event) => {
+        if (event.data?.type === "niftyLTP" && event.data?.label) {
+            const box = document.getElementById("niftyLtpBox");
+            if (box) box.innerHTML = event.data.label;
+        }
+    });
+
+    document.body.addEventListener("click", function (e) {
+    if (e.target.classList.contains("trail-toggle-btn")) {
+        const btn = e.target;
+        const row = btn.closest("tr");
+        const isEnabled = btn.dataset.enabled === "1";
+
+        if (isEnabled) {
+        btn.dataset.enabled = "0";
+        btn.textContent = "▶️";
+        btn.style.color = "gray";
+        btn.style.borderColor = "gray";
+        row.dataset.trailingEnabled = "0";
+        } else {
+        btn.dataset.enabled = "1";
+        btn.textContent = "⏸️";
+        btn.style.color = "cyan";
+        btn.style.borderColor = "cyan";
+        row.dataset.trailingEnabled = "1";
+
+        // If maxPnl already high, restart trailing logic
+        const maxPnl = parseFloat(row.dataset.maxPnl || "0");
+        let trailRatio = null;
+
+        if (maxPnl >= 1500) trailRatio = 0.20;
+        else if (maxPnl >= 1250) trailRatio = 0.30;
+        else if (maxPnl >= 1000) trailRatio = 0.40;
+        else if (maxPnl >= 750)  trailRatio = 0.50;
+        else if (maxPnl >= 500)  trailRatio = 0.60;
+
+        if (trailRatio !== null) {
+            row.dataset.trailing = trailRatio;
+            const trailingCell = row.querySelector(".trailing-cell");
+            if (trailingCell) {
+            trailingCell.textContent = `${Math.round(trailRatio * 100)}%`;
+            trailingCell.style.color = "cyan";
+            }
+        }
+        }
+    }
+    });
+
+
+
+
+
+
+    document.addEventListener("click", function (e) {
+        // ✅ SL Cell Editing
+        const slCell = e.target.closest(".sl-cell");
+        if (slCell) {
+            const row = slCell.closest("tr");
+            const currentSL = parseFloat(row.dataset.sl || "0");
+            const newSL = prompt("Enter new SL value (₹):", currentSL);
+
+            if (newSL && !isNaN(newSL)) {
+                const slValue = parseFloat(newSL).toFixed(2);
+                row.dataset.sl = slValue;
+                slCell.textContent = `₹${slValue}`;
+                const symbol = row.dataset.symbol;
+                const meta = liveOptionMap[symbol];
+                if (meta?.series) {
+                    if (meta.slLine) {
+                        meta.series.removePriceLine(meta.slLine);
+                    }
+
+                    meta.slLine = meta.series.createPriceLine({
+                        price: parseFloat(slValue),
+                        color: 'orange',
+                        lineWidth: 2,
+                        lineStyle: 1,
+                        axisLabelVisible: true,
+                        title: 'SL'
+                    });
+                }
+
+
+                // ✅ Update SL Changed column
+                const slChangedCell = row.querySelector(".sl-changed-cell");
+                if (slChangedCell) {
+                    slChangedCell.textContent = "Yes";
+                    slChangedCell.style.color = "lime";
+                }
+
+                showToast(`✏️ SL manually set to ₹${slValue}`, "info");
+            }
+        }
+
+        // ✅ Trailing % Cell Editing
+        const trailCell = e.target.closest(".trailing-cell");
+        if (trailCell) {
+            const row = trailCell.closest("tr");
+            const currentValue = +(row.dataset.trailing || "0.20") * 100;
+            const userInput = prompt("Enter trailing % (1–90):", currentValue);
+
+            if (userInput && !isNaN(userInput)) {
+                const percent = Math.max(1, Math.min(90, parseFloat(userInput)));
+                const ratio = (percent / 100).toFixed(2);
+                row.dataset.trailing = ratio;
+                trailCell.textContent = `${percent.toFixed(0)}%`;
+
+                showToast(`🔁 Trailing % set to ${percent.toFixed(0)}%`, "info");
+            }
+        }
+    });
+
+
+
+
+
+    </script>
+   <div id="toast-container"></div>
+
+   <footer style="
+    position: fixed;
+    bottom: 4px;
+    left: 10px;
+    font-size: 11px;
+    color: #888;
+    background: transparent;
+    z-index: 100;
+    font-family: monospace;
+    ">
+    © 2025 | Powered by Rugved
+    </footer>
+
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            setTimeout(() => {
+            const splash = document.getElementById("splash-screen");
+            splash.style.opacity = 0;
+            setTimeout(() => splash.remove(), 1000); // Remove after fade-out
+            }, 4000); // 4 seconds
+        });
+    </script>
+
+    <script>
+        window.addEventListener("message", (event) => {
+        if (event.data?.type === "niftyLTP" && event.data.label) {
+            console.log("📩 Received NIFTY Label:", event.data.label);  // Debug
+
+            const box = document.getElementById("niftyLtpBox");
+            if (box) {
+            box.innerHTML = event.data.label;
+            }
+        }
+    });
+    </script>
+
+
+
+    <script>
+        window.addEventListener("message", (event) => {
+        if (event.data?.type === "niftyLTP" && event.data.label) {
+            console.log("✅ NIFTY label received:", event.data.label);
+            const box = document.getElementById("niftyLtpBox");
+            if (box) {
+            box.innerHTML = event.data.label;
+            }
+        }
+    });
+    </script>
+
+    
+</body>
+</html>
