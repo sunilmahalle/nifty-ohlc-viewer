@@ -1100,7 +1100,7 @@ app.add_middleware(
 @app.get("/funds")
 async def get_funds():
     headers = {
-        "access-token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJkaGFuIiwicGFydG5lcklkIjoiIiwiZXhwIjoxNzU1MDU0NTMwLCJ0b2tlbkNvbnN1bWVyVHlwZSI6IlNFTEYiLCJ3ZWJob29rVXJsIjoiIiwiZGhhbkNsaWVudElkIjoiMTEwMjAzMTE3MCJ9.P_aE8FJbTJ7YguChKjx8g_dEMSmqS71oBEnbJAkVWEN8QvtKBjRDr-bUGn8aKfEVQjdVoWX01K4NCnTx5ofdhg",  # 🔒 Replace with real token securely
+        "access-token": "",  # 🔒 Replace with real token securely
         "Content-Type": "application/json"
     }
     url = "https://api.dhan.co/v2/fundlimit"
@@ -1111,7 +1111,7 @@ async def get_funds():
 @app.get("/trades")
 async def get_trades(from_date: str, to_date: str, page: int = 0):
     headers = {
-        "access-token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJkaGFuIiwicGFydG5lcklkIjoiIiwiZXhwIjoxNzU1MDU0NTMwLCJ0b2tlbkNvbnN1bWVyVHlwZSI6IlNFTEYiLCJ3ZWJob29rVXJsIjoiIiwiZGhhbkNsaWVudElkIjoiMTEwMjAzMTE3MCJ9.P_aE8FJbTJ7YguChKjx8g_dEMSmqS71oBEnbJAkVWEN8QvtKBjRDr-bUGn8aKfEVQjdVoWX01K4NCnTx5ofdhg",
+        "access-token": "",
         "Content-Type": "application/json"
     }
     url = f"https://api.dhan.co/v2/trades/{from_date}/{to_date}/{page}"
